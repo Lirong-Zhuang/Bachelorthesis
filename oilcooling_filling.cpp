@@ -36,6 +36,7 @@ Real inlet_height = RM - BW;             /**< Inflow location height */
 Real inlet_distance = -(0.5 * LL);          /**< Inflow location distance */
 Vec2d inlet_halfsize = Vec2d(0.5 * LL, 0.5 * LH);
 Vec2d inlet_translation = Vec2d(inlet_distance, inlet_height) + inlet_halfsize;
+Transform inlet_transform(Rotation2d(-(Pi / 2)), inlet_translation);
 BoundingBox system_domain_bounds(Vec2d(-BW - RM, -BW - RM), Vec2d(RM + BW, RM + BW));
 Vecd center(0.0, 0.0);
 // observer location
@@ -58,7 +59,7 @@ class WallBoundary : public MultiPolygonShape
     {
         multi_polygon_.addACircle(center, (RM + BW) , resolution_circle, ShapeBooleanOps::add);         /**< Outer wall of motor hausing. */
         multi_polygon_.addACircle(center, RM , resolution_circle, ShapeBooleanOps::sub);                /**< Inner wall of motor hausing. */
-        multi_polygon_.addABox(Transform(inlet_translation), inlet_halfsize, ShapeBooleanOps::sub);     /**< Inlets. */
+        multi_polygon_.addABox(inlet_transform, inlet_halfsize, ShapeBooleanOps::sub);     /**< Inlets. */
         multi_polygon_.addACircle(center, RS , resolution_circle, ShapeBooleanOps::add);                /**< Shaft. */
         /** Add the windings. */
         Real angle_increment = 2 * PI / Wnum;
@@ -86,7 +87,7 @@ class InletInflowCondition : public fluid_dynamics::EmitterInflowCondition
   protected:
     virtual Vecd getTargetVelocity(Vecd &position, Vecd &velocity) override
     {
-        return Vec2d(0.0, -1.0);
+        return Vec2d(1.0, 0.0);
     }
 };
 //----------------------------------------------------------------------
@@ -102,7 +103,7 @@ int main(int ac, char *av[])
     //----------------------------------------------------------------------
     //	Creating body, materials and particles.
     //----------------------------------------------------------------------
-    TransformShape<GeometricShapeBox> oil_inlet_shape(Transform(inlet_translation), inlet_halfsize);
+    TransformShape<GeometricShapeBox> oil_inlet_shape(inlet_transform, inlet_halfsize);
     FluidBody oil_body(sph_system, oil_inlet_shape, "OilBody");
     oil_body.sph_adaptation_->resetKernel<KernelTabulated<KernelWendlandC2>>(20);
     oil_body.defineMaterial<WeaklyCompressibleFluid>(rho0_f, c_f);
@@ -145,7 +146,7 @@ int main(int ac, char *av[])
     ReduceDynamics<fluid_dynamics::AdvectionTimeStepSize> get_fluid_advection_time_step_size(oil_body, U_f);
     ReduceDynamics<fluid_dynamics::AcousticTimeStepSize> get_fluid_time_step_size(oil_body);
 
-    BodyAlignedBoxByParticle emitter(oil_body, makeShared<AlignedBoxShape>(yAxis, Transform(inlet_translation), inlet_halfsize));
+    BodyAlignedBoxByParticle emitter(oil_body, makeShared<AlignedBoxShape>(xAxis, inlet_transform, inlet_halfsize));
     SimpleDynamics<InletInflowCondition> inflow_condition(emitter);
     SimpleDynamics<fluid_dynamics::EmitterInflowInjection> emitter_injection(emitter, inlet_buffer);
     //----------------------------------------------------------------------
