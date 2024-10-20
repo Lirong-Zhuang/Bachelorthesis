@@ -1,9 +1,6 @@
 /**
  * @file 	filling_tank_vertical.cpp
  * @brief 	2D example to show that a tank is verticaL filled by emitter.
- * @details This is the one of the basic test cases, also the first case for
- * 			understanding how emitter inflow is working.
- * @author 	Xiangyu Hu
  */
 #include "sphinxsys.h"
 using namespace SPH;
