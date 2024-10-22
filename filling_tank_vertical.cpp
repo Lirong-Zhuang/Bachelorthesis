@@ -7,16 +7,16 @@ using namespace SPH;
 //----------------------------------------------------------------------
 //	Global geometry, material parameters and numerical setup.
 //----------------------------------------------------------------------
-Real DL = 5.366;              /**< Tank length. */
-Real DH = 5.366;              /**< Tank height. */
-Real resolution_ref = 0.025;  /**< Initial reference particle spacing. */
-Real BW = resolution_ref * 4; /**< Extending width for wall boundary. */
-Real LL = 0.125;           /**< Inflow region length. */
-Real LH = 2 * BW;              /**< Inflows region height. */
+Real DL = 5.366;                   /**< Tank length. */
+Real DH = 5.366;                   /**< Tank height. */
+Real resolution_ref = 0.025;       /**< Initial reference particle spacing. */
+Real BW = resolution_ref * 4;      /**< Extending width for wall boundary. */
+Real LL = 0.125;                   /**< Inflow region length. */
+Real LH = 2 * BW;                  /**< Inflows region height. */
 Real inlet_height = DH - 0.5 * LH; /**< Inflow location height */
 Vec2d inlet_halfsize = Vec2d(0.5 * LH, 0.5 * LL);
 Vec2d inlet_translation = Vec2d(0.5 * DL, DH);
-Transform inlet_transform(Rotation2d( - (Pi / 2)), inlet_translation);
+Transform inlet_transform(Rotation2d(-(Pi / 2)), inlet_translation);
 Real inlet_height2 = 1.0;   /**< Inflow location height */
 Real inlet_distance2 = -BW; /**< Inflow location distance */
 Vec2d inlet_halfsize2 = Vec2d(0.5 * LH, 0.5 * LL);
@@ -29,15 +29,14 @@ Real gravity_g = 1.0;                                   /**< Gravity force of fl
 Real U_f = 2.0 * sqrt(gravity_g * (inlet_height + LH)); /**< Characteristic velocity. */
 Real c_f = 10.0 * U_f;                                  /**< Reference sound speed. */
 // Create a rotor.
-Real DS = 2; /**< Diameter of transmission shaft on rotor. */
-Real RS = 0.5 * DS; /**< Radius of transmission shaft on rotor. */
+Real DS = 2;                              /**< Diameter of transmission shaft on rotor. */
+Real RS = 0.5 * DS;                       /**< Radius of transmission shaft on rotor. */
 Real reference_circle_radius = 0.25 * RS; /**< Radius of reference circlev on rotor. */
-Vecd center(DL / 2, DH / 2); /**< Location of transmission shaft on rotor. */
-Vec2d reference_circle_initial_center = center + Vec2d(0.0, 0.5 * RS);
-int resolution_circle = 100; /**<Approximate the circle as the number of sides of the polygon. */
-Real rotor_angular_velocity = 5.0; /**<Angular velocity. */
-Real rotor_current_angle = 0.0;    /**<Angle of rotor. */
-Transform rotor_rotation_transform(Rotation2d(rotor_current_angle), center);
+Vecd center(DL / 2, DH / 2);              /**< Location of transmission shaft on rotor. */
+int resolution_circle = 50;       /**<Approximate the circle as the number of sides of the polygon. */
+Real rotor_rotation_velocity = 10; /**<Angular velocity rpm. */
+Real Omega = rotor_rotation_velocity * 2 * Pi / 60; /**<Angle of rotor. */
+Real angle_rotation = 0.0;
 //----------------------------------------------------------------------
 //	Geometries
 //----------------------------------------------------------------------
@@ -66,52 +65,28 @@ std::vector<Vecd> CreateInnerWallShape()
     return inner_wall_shape;
 }
 //----------------------------------------------------------------------
-//	Rotated rotor
-//----------------------------------------------------------------------
-std::vector<Vecd> CreateRotatingCircleShape(Vecd center, Real radius, int resolution_circle, Real current_angle)
-{
-    std::vector<Vecd> circle_shape;
-
-    for (int i = 0; i <= resolution_circle; ++i)
-    {
-        // Calculate the angle for each point on the circle
-        Real theta = 2.0 * Pi * i / resolution_circle;
-
-        // Initial position on the circle (without rotation)
-        Real x = center[0] + radius * cos(theta);
-        Real y = center[1] + radius * sin(theta);
-
-        // Apply rotation to the point (using the current_angle)
-        Real rotated_x = center[0] + (x - center[0]) * cos(current_angle) - (y - center[1]) * sin(current_angle);
-        Real rotated_y = center[1] + (x - center[0]) * sin(current_angle) + (y - center[1]) * cos(current_angle);
-
-        circle_shape.push_back(Vecd(rotated_x, rotated_y));
-    }
-
-    return circle_shape;
-}
-Vec2d CreateRotatingReferenceCircleCenter(Vecd initial_center, Vecd center, Real current_angle)
-{
-    Real rotated_x = center[0] + (initial_center[0] - center[0]) * cos(current_angle) - (initial_center[1] - center[1]) * sin(current_angle);
-    Real rotated_y = center[1] + (initial_center[0] - center[0]) * sin(current_angle) + (initial_center[1] - center[1]) * cos(current_angle);
-    return Vec2d(rotated_x, rotated_y);
-}
-//----------------------------------------------------------------------
 //	Case-dependent wall boundary
 //----------------------------------------------------------------------
 class WallBoundary : public MultiPolygonShape
 {
-    std::vector<Vecd> rotated_circle_shape = CreateRotatingCircleShape(center, RS, resolution_circle, rotor_current_angle);
-    Vec2d rotated_reference_circle_center = CreateRotatingReferenceCircleCenter(reference_circle_initial_center, center, rotor_current_angle);
   public:
     explicit WallBoundary(const std::string &shape_name) : MultiPolygonShape(shape_name)
     {
         multi_polygon_.addAPolygon(CreateOuterWallShape(), ShapeBooleanOps::add);
         multi_polygon_.addAPolygon(CreateInnerWallShape(), ShapeBooleanOps::sub);
         multi_polygon_.addABox(inlet_transform, inlet_halfsize, ShapeBooleanOps::sub);
+    }
+};
+//----------------------------------------------------------------------
+//	Case-dependent rotor boundary
+//----------------------------------------------------------------------
+class RotorBoundary : public MultiPolygonShape
+{
+  public:
+    explicit RotorBoundary(const std::string &shape_name) : MultiPolygonShape(shape_name)
+    {
         multi_polygon_.addACircle(center, RS, resolution_circle, ShapeBooleanOps::add);
     }
-        
 };
 //----------------------------------------------------------------------
 //	Inlet inflow condition
@@ -125,7 +100,7 @@ class InletInflowCondition : public fluid_dynamics::EmitterInflowCondition
   protected:
     virtual Vecd getTargetVelocity(Vecd &position, Vecd &velocity) override
     {
-        return Vec2d(0.5, 0.0);
+        return Vec2d(2.0, 0.0);
     }
 };
 //----------------------------------------------------------------------
@@ -148,11 +123,14 @@ int main(int ac, char *av[])
     ParticleBuffer<ReserveSizeFactor> inlet_buffer(350.0);
     water_body.generateParticlesWithReserve<BaseParticles, Lattice>(inlet_buffer);
 
-    auto wall_boundary = makeShared<WallBoundary>("Wall");
-    SolidBody wall(sph_system, wall_boundary);
+    SolidBody wall(sph_system, makeShared<WallBoundary>("Wall"));
     wall.defineMaterial<Solid>();
     wall.generateParticles<BaseParticles, Lattice>();
-    
+
+    SolidBody rotor(sph_system, makeShared<RotorBoundary>("Rotor"));
+    rotor.defineMaterial<Solid>();
+    rotor.generateParticles<BaseParticles, Lattice>();
+
     ObserverBody fluid_observer(sph_system, "FluidObserver");
     fluid_observer.generateParticles<ObserverParticles>(observation_location);
     //----------------------------------------------------------------------
@@ -164,7 +142,7 @@ int main(int ac, char *av[])
     //  inner and contact relations.
     //----------------------------------------------------------------------
     InnerRelation water_body_inner(water_body);
-    ContactRelation water_body_contact(water_body, {&wall});
+    ContactRelation water_body_contact(water_body, {&wall, &rotor});
     ContactRelation fluid_observer_contact(fluid_observer, {&water_body});
     //----------------------------------------------------------------------
     // Combined relations built from basic relations
@@ -174,6 +152,7 @@ int main(int ac, char *av[])
     //	Define all numerical methods which are used in this case.
     //----------------------------------------------------------------------
     SimpleDynamics<NormalDirectionFromBodyShape> wall_normal_direction(wall);
+    SimpleDynamics<NormalDirectionFromBodyShape> rotor_normal_direction(rotor);
     InteractionWithUpdate<SpatialTemporalFreeSurfaceIndicationComplex> indicate_free_surface(water_body_inner, water_body_contact);
 
     Dynamics1Level<fluid_dynamics::Integration1stHalfWithWallRiemann> pressure_relaxation(water_body_inner, water_body_contact);
@@ -185,7 +164,7 @@ int main(int ac, char *av[])
     ReduceDynamics<fluid_dynamics::AdvectionTimeStepSize> get_fluid_advection_time_step_size(water_body, U_f);
     ReduceDynamics<fluid_dynamics::AcousticTimeStepSize> get_fluid_time_step_size(water_body);
 
-    BodyAlignedBoxByParticle emitter(water_body, makeShared<AlignedBoxShape>(xAxis, inlet_transform , inlet_halfsize));
+    BodyAlignedBoxByParticle emitter(water_body, makeShared<AlignedBoxShape>(xAxis, inlet_transform, inlet_halfsize));
     SimpleDynamics<InletInflowCondition> inflow_condition(emitter);
     SimpleDynamics<fluid_dynamics::EmitterInflowInjection> emitter_injection(emitter, inlet_buffer);
     //----------------------------------------------------------------------
@@ -203,6 +182,7 @@ int main(int ac, char *av[])
     sph_system.initializeSystemCellLinkedLists();
     sph_system.initializeSystemConfigurations();
     wall_normal_direction.exec();
+    rotor_normal_direction.exec();
     indicate_free_surface.exec();
     constant_gravity.exec();
     //----------------------------------------------------------------------
@@ -237,6 +217,11 @@ int main(int ac, char *av[])
             Real relaxation_time = 0.0;
             while (relaxation_time < Dt)
             {
+                //angle_rotation -= Omega * dt;
+                //Transform rotation(Rotation2d(angle_rotation), center);
+               // SimpleDynamics<TranslationAndRotation> rotor_rotation(rotor, rotation);
+               // rotor_rotation.exec();
+
                 pressure_relaxation.exec(dt);
                 inflow_condition.exec();
                 density_relaxation.exec(dt);
