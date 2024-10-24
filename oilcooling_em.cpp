@@ -62,7 +62,27 @@ class WallBoundary : public MultiPolygonShape
         multi_polygon_.addACircle(center, RM, resolution_circle, ShapeBooleanOps::sub);        /**< Inner wall of motor hausing. */
         multi_polygon_.addABox(inlet_transform, inlet_halfsize, ShapeBooleanOps::sub);         /**< Top Inlets. */
         multi_polygon_.addABox(Transform(outlet_translation), outlet_halfsize, ShapeBooleanOps::sub);
-        multi_polygon_.addACircle(center, RS, resolution_circle, ShapeBooleanOps::add); /**< Shaft. */
+    }
+};
+//----------------------------------------------------------------------
+//	Case-dependent Rotor boundary
+//----------------------------------------------------------------------
+class RotorBoundary : public MultiPolygonShape
+{
+  public:
+    explicit RotorBoundary(const std::string &shape_name) : MultiPolygonShape(shape_name)
+    {
+        multi_polygon_.addACircle(center, RS, resolution_circle, ShapeBooleanOps::add); /**< Rotor Shaft. */
+    }
+};
+//----------------------------------------------------------------------
+//	Case-dependent Winding boundary
+//----------------------------------------------------------------------
+class WindingBoundary : public MultiPolygonShape
+{
+  public:
+    explicit WindingBoundary(const std::string &shape_name) : MultiPolygonShape(shape_name)
+    {
         /** Add the windings. */
         for (int i = 0; i < Wnum; ++i)
         {
@@ -115,6 +135,14 @@ int main(int ac, char *av[])
     wall.defineMaterial<Solid>();
     wall.generateParticles<BaseParticles, Lattice>();
 
+    SolidBody rotor(sph_system, makeShared<RotorBoundary>("Rotor"));
+    rotor.defineMaterial<Solid>();
+    rotor.generateParticles<BaseParticles, Lattice>();
+
+    SolidBody winding(sph_system, makeShared<WindingBoundary>("Winding"));
+    winding.defineMaterial<Solid>();
+    winding.generateParticles<BaseParticles, Lattice>();
+
     ObserverBody fluid_observer(sph_system, "FluidObserver");
     fluid_observer.generateParticles<ObserverParticles>(observation_location);
     //----------------------------------------------------------------------
@@ -126,7 +154,7 @@ int main(int ac, char *av[])
     //  inner and contact relations.
     //----------------------------------------------------------------------
     InnerRelation oil_body_inner(oil_body);
-    ContactRelation oil_body_contact(oil_body, {&wall});
+    ContactRelation oil_body_contact(oil_body, {&wall, &rotor, &winding});
     ContactRelation fluid_observer_contact(fluid_observer, {&oil_body});
     //----------------------------------------------------------------------
     // Combined relations built from basic relations
@@ -136,6 +164,8 @@ int main(int ac, char *av[])
     //	Define all numerical methods which are used in this case.
     //----------------------------------------------------------------------
     SimpleDynamics<NormalDirectionFromBodyShape> wall_normal_direction(wall);
+    SimpleDynamics<NormalDirectionFromBodyShape> rotor_normal_direction(rotor);
+    SimpleDynamics<NormalDirectionFromBodyShape> winding_normal_direction(winding);
     InteractionWithUpdate<SpatialTemporalFreeSurfaceIndicationComplex> indicate_free_surface(oil_body_inner, oil_body_contact);
 
     Dynamics1Level<fluid_dynamics::Integration1stHalfWithWallRiemann> pressure_relaxation(oil_body_inner, oil_body_contact);
@@ -165,6 +195,8 @@ int main(int ac, char *av[])
     sph_system.initializeSystemCellLinkedLists();
     sph_system.initializeSystemConfigurations();
     wall_normal_direction.exec();
+    rotor_normal_direction.exec();
+    winding_normal_direction.exec();
     indicate_free_surface.exec();
     constant_gravity.exec();
     //----------------------------------------------------------------------
