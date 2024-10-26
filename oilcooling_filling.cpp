@@ -50,6 +50,9 @@ Real rho0_f = 0.9;                                      /**< Reference density o
 Real gravity_g = 1.0;                                   /**< Gravity force of fluid. */
 Real U_f = 2.0 * sqrt(gravity_g * (inlet_height + LH)); /**< Characteristic velocity. */
 Real c_f = 10.0 * U_f;                                  /**< Reference sound speed. */
+// dynamics informations of rotor
+Real rotor_rotation_velocity = 300;                    /**<Angular velocity rpm. */
+Real Omega = -(rotor_rotation_velocity * 2 * Pi / 60); /**<Angle of rotor. */
 //----------------------------------------------------------------------
 //	Geometrie of the othor 4 inlets.
 //----------------------------------------------------------------------
@@ -77,7 +80,27 @@ class WallBoundary : public MultiPolygonShape
         multi_polygon_.addABox(inlet3_transform, inlet_halfsize, ShapeBooleanOps::sub);
         multi_polygon_.addABox(inlet4_transform, inlet_halfsize, ShapeBooleanOps::sub);
         multi_polygon_.addABox(inlet5_transform, inlet_halfsize, ShapeBooleanOps::sub);
-        multi_polygon_.addACircle(center, RS , resolution_circle, ShapeBooleanOps::add);                /**< Shaft. */
+    }
+};
+//----------------------------------------------------------------------
+//	Case-dependent Rotor boundary
+//----------------------------------------------------------------------
+class RotorBoundary : public MultiPolygonShape
+{
+  public:
+    explicit RotorBoundary(const std::string &shape_name) : MultiPolygonShape(shape_name)
+    {
+        multi_polygon_.addACircle(center, RS, resolution_circle, ShapeBooleanOps::add); /**< Rotor Shaft. */
+    }
+};
+//----------------------------------------------------------------------
+//	Case-dependent Winding boundary
+//----------------------------------------------------------------------
+class WindingBoundary : public MultiPolygonShape
+{
+  public:
+    explicit WindingBoundary(const std::string &shape_name) : MultiPolygonShape(shape_name)
+    {
         /** Add the windings. */
         for (int i = 0; i < Wnum; ++i)
         {
@@ -85,7 +108,7 @@ class WallBoundary : public MultiPolygonShape
             Real center_x = WD * cos(theta);
             Real center_y = WD * sin(theta);
             Vec2d winding_translation(center_x, center_y);
-            Vec2d winding_halfsize(WL / 2 , WH / 2);
+            Vec2d winding_halfsize(WL / 2, WH / 2);
             Transform winding_transform(Rotation2d(theta - (PI / 2)), winding_translation);
             multi_polygon_.addABox(winding_transform, winding_halfsize, ShapeBooleanOps::add);
         }
@@ -144,6 +167,14 @@ int main(int ac, char *av[])
     wall.defineMaterial<Solid>();
     wall.generateParticles<BaseParticles, Lattice>();
 
+    SolidBody rotor(sph_system, makeShared<RotorBoundary>("Rotor"));
+    rotor.defineMaterial<Solid>();
+    rotor.generateParticles<BaseParticles, Lattice>();
+
+    SolidBody winding(sph_system, makeShared<WindingBoundary>("Winding"));
+    winding.defineMaterial<Solid>();
+    winding.generateParticles<BaseParticles, Lattice>();
+
     ObserverBody fluid_observer(sph_system, "FluidObserver");
     fluid_observer.generateParticles<ObserverParticles>(observation_location);
     //----------------------------------------------------------------------
@@ -155,7 +186,7 @@ int main(int ac, char *av[])
     //  inner and contact relations.
     //----------------------------------------------------------------------
     InnerRelation oil_body_inner(oil_body);
-    ContactRelation oil_body_contact(oil_body, {&wall});
+    ContactRelation oil_body_contact(oil_body, {&wall, &rotor, &winding});
     ContactRelation fluid_observer_contact(fluid_observer, {&oil_body});
     //----------------------------------------------------------------------
     // Combined relations built from basic relations
@@ -165,6 +196,8 @@ int main(int ac, char *av[])
     //	Define all numerical methods which are used in this case.
     //----------------------------------------------------------------------
     SimpleDynamics<NormalDirectionFromBodyShape> wall_normal_direction(wall);
+    SimpleDynamics<NormalDirectionFromBodyShape> rotor_normal_direction(rotor);
+    SimpleDynamics<NormalDirectionFromBodyShape> winding_normal_direction(winding);
     InteractionWithUpdate<SpatialTemporalFreeSurfaceIndicationComplex> indicate_free_surface(oil_body_inner, oil_body_contact);
 
     Dynamics1Level<fluid_dynamics::Integration1stHalfWithWallRiemann> pressure_relaxation(oil_body_inner, oil_body_contact);
@@ -200,12 +233,37 @@ int main(int ac, char *av[])
     RegressionTestDynamicTimeWarping<ReducedQuantityRecording<TotalMechanicalEnergy>> write_water_mechanical_energy(oil_body, gravity);
     RegressionTestDynamicTimeWarping<ObservedQuantityRecording<Real>> write_recorded_water_pressure("Pressure", fluid_observer_contact);
     //----------------------------------------------------------------------
+    //	Building of multibody for rotor rotation.
+    //----------------------------------------------------------------------
+    SimTK::MultibodySystem MBsystem;
+    /** The bodies or matter of the MBsystem. */
+    SimTK::SimbodyMatterSubsystem matter(MBsystem);
+    /** The forces of the MBsystem.*/
+    SimTK::GeneralForceSubsystem forces(MBsystem);
+    /** Mass properties of the rigid shell box. */
+    SolidBodyPartForSimbody rotor_multibody(rotor, makeShared<RotorBoundary>("Rotor"));
+    SimTK::Body::Rigid rigid_info(*rotor_multibody.body_part_mass_properties_);
+    SimTK::MobilizedBody::Pin
+        Rotor_Pin(matter.Ground(), SimTK::Transform(SimTKVec3(0)), rigid_info, SimTK::Transform(SimTKVec3()));
+    /** Initial angle of rotation. */
+    Rotor_Pin.setDefaultAngle(0.0);
+    /** Time stepping method for multibody system.*/
+    SimTK::State state = MBsystem.realizeTopology();
+    Rotor_Pin.setRate(state, Omega);
+    SimTK::RungeKuttaMersonIntegrator integ(MBsystem);
+    integ.setAccuracy(1e-3);
+    integ.initialize(state);
+    /** Coupling between SimBody and SPH.*/
+    SimpleDynamics<solid_dynamics::ConstraintBodyPartBySimBody> constraint_rotor(rotor_multibody, MBsystem, Rotor_Pin, integ);
+    //----------------------------------------------------------------------
     //	Prepare the simulation with cell linked list, configuration
     //	and case specified initial condition if necessary.
     //----------------------------------------------------------------------
     sph_system.initializeSystemCellLinkedLists();
     sph_system.initializeSystemConfigurations();
     wall_normal_direction.exec();
+    rotor_normal_direction.exec();
+    winding_normal_direction.exec();
     indicate_free_surface.exec();
     constant_gravity.exec();
     //----------------------------------------------------------------------
@@ -239,6 +297,10 @@ int main(int ac, char *av[])
             Real relaxation_time = 0.0;
             while (relaxation_time < Dt)
             {
+                SimTK::State &state_for_update = integ.updAdvancedState();
+                integ.stepBy(dt);
+                constraint_rotor.exec();
+
                 pressure_relaxation.exec(dt);
                 inflow_condition.exec();
                 inflow_condition2.exec();
