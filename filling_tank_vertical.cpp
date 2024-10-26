@@ -34,7 +34,7 @@ Real RS = 0.5 * DS;                       /**< Radius of transmission shaft on r
 Real reference_circle_radius = 0.25 * RS; /**< Radius of reference circlev on rotor. */
 Vecd center(DL / 2, DH / 2);              /**< Location of transmission shaft on rotor. */
 int resolution_circle = 50;       /**<Approximate the circle as the number of sides of the polygon. */
-Real rotor_rotation_velocity = 10; /**<Angular velocity rpm. */
+Real rotor_rotation_velocity = 20; /**<Angular velocity rpm. */
 Real Omega = rotor_rotation_velocity * 2 * Pi / 60; /**<Angle of rotor. */
 Real angle_rotation = 0.0;
 //----------------------------------------------------------------------
@@ -104,6 +104,35 @@ class InletInflowCondition : public fluid_dynamics::EmitterInflowCondition
     }
 };
 //----------------------------------------------------------------------
+//	A class to do the selfrotation.
+//----------------------------------------------------------------------
+class InitialRotation : public BaseLocalDynamics<SPHBody>, public DataDelegateSimple
+{
+  private:
+    StdLargeVec<Vec2d> &pos_;
+    Vec2d center_of_mass_;
+    Real omega_;
+
+  public:
+    InitialRotation(SPHBody &body, const Vec2d &center_of_mass, Real omega)
+        : BaseLocalDynamics<SPHBody>(body), DataDelegateSimple(body),
+          pos_(*this->particles_->template getVariableDataByName<Vec2d>("Position")), 
+          center_of_mass_(center_of_mass), omega_(omega) {}
+
+    void update(size_t index_i, Real dt)
+    {
+        Real rotation_angle = omega_ * dt;
+        Vec2d relative_pos = pos_[index_i] - center_of_mass_;
+        Real cos_angle = cos(rotation_angle);
+        Real sin_angle = sin(rotation_angle);
+
+        Vec2d rotated_pos = Vec2d(
+            cos_angle * relative_pos[0] - sin_angle * relative_pos[1],
+            sin_angle * relative_pos[0] + cos_angle * relative_pos[1]);
+        pos_[index_i] = center_of_mass_ + rotated_pos;
+    }
+};
+//----------------------------------------------------------------------
 //	Main program starts here.
 //----------------------------------------------------------------------
 int main(int ac, char *av[])
@@ -130,7 +159,7 @@ int main(int ac, char *av[])
     SolidBody rotor(sph_system, makeShared<RotorBoundary>("Rotor"));
     rotor.defineMaterial<Solid>();
     rotor.generateParticles<BaseParticles, Lattice>();
-
+    
     ObserverBody fluid_observer(sph_system, "FluidObserver");
     fluid_observer.generateParticles<ObserverParticles>(observation_location);
     //----------------------------------------------------------------------
@@ -167,6 +196,9 @@ int main(int ac, char *av[])
     BodyAlignedBoxByParticle emitter(water_body, makeShared<AlignedBoxShape>(xAxis, inlet_transform, inlet_halfsize));
     SimpleDynamics<InletInflowCondition> inflow_condition(emitter);
     SimpleDynamics<fluid_dynamics::EmitterInflowInjection> emitter_injection(emitter, inlet_buffer);
+
+    //Transform rotation(Rotation2d(-(Pi / 6)));
+    SimpleDynamics<InitialRotation> rotor_rotation(rotor, center, (-(Pi / 6)));
     //----------------------------------------------------------------------
     //	File output and regression check.
     //----------------------------------------------------------------------
@@ -208,6 +240,8 @@ int main(int ac, char *av[])
     {
         Real integration_time = 0.0;
         /** Integrate time (loop) until the next output time. */
+        size_t total_particles = rotor.getBaseParticles().TotalRealParticles();
+        rotor_rotation.exec();
         while (integration_time < output_interval)
         {
             Real Dt = get_fluid_advection_time_step_size.exec();
@@ -217,10 +251,11 @@ int main(int ac, char *av[])
             Real relaxation_time = 0.0;
             while (relaxation_time < Dt)
             {
-                //angle_rotation -= Omega * dt;
-                //Transform rotation(Rotation2d(angle_rotation), center);
-               // SimpleDynamics<TranslationAndRotation> rotor_rotation(rotor, rotation);
-               // rotor_rotation.exec();
+                //angle_rotation += Omega * dt;
+                //for (size_t i = 0; i < total_particles; ++i)
+                //{
+                    //rotor_rotation.update(i, dt);
+                //}
 
                 pressure_relaxation.exec(dt);
                 inflow_condition.exec();
