@@ -169,7 +169,7 @@ class InletInflowCondition : public fluid_dynamics::EmitterInflowCondition
   protected:
     virtual Vecd getTargetVelocity(Vecd &position, Vecd &velocity) override
     {
-        return Vec2d(1.0, 0.0);
+        return Vec2d(2.0, 0.0);
     }
 };
 //----------------------------------------------------------------------
