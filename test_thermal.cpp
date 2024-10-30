@@ -1,6 +1,7 @@
 /**
  * @file 	filling_tank_vertical.cpp
  * @brief 	2D example to show that a tank is verticaL filled by emitter.
+ *  目标：现有代码中墙和转子似乎不会变温；每次运行后都有空指针错误，不知道代入oilcooling还会不会存在这个问题
  */
 #include "sphinxsys.h"
 using namespace SPH;
@@ -95,28 +96,14 @@ class ThermoWallInitialCondition : public LocalDynamics, public DataDelegateSimp
   public:
     explicit ThermoWallInitialCondition(SPHBody &sph_body)
         : LocalDynamics(sph_body), DataDelegateSimple(sph_body),
-          pos_(*particles_->getVariableDataByName<Vecd>("Position")),
           phi_(*particles_->registerSharedVariable<Real>("Phi")){};
 
     void update(size_t index_i, Real dt)
     {
-        bool is_on_boundary =
-            ((pos_[index_i][1] >= DH && pos_[index_i][1] <= DH + BW) &&
-             (pos_[index_i][0] >= 0 && pos_[index_i][0] <= DL)) ||
-            ((pos_[index_i][1] >= -BW && pos_[index_i][1] <= 0) &&
-             (pos_[index_i][0] >= 0 && pos_[index_i][0] <= DL)) ||
-            ((pos_[index_i][0] >= DL && pos_[index_i][0] <= DL + BW) &&
-             (pos_[index_i][1] >= 0 && pos_[index_i][1] <= DH)) ||
-            ((pos_[index_i][0] >= -BW && pos_[index_i][0] <= 0) &&
-             (pos_[index_i][1] >= 0 && pos_[index_i][1] <= DH));
-        if (is_on_boundary)
-        {
-            phi_[index_i] = phi_wall;
-        }
+        phi_[index_i] = phi_wall;
     };
 
   protected:
-    StdLargeVec<Vecd> &pos_;
     StdLargeVec<Real> &phi_;
 };
 //----------------------------------------------------------------------
@@ -127,17 +114,13 @@ class ThermoRotorInitialCondition : public LocalDynamics, public DataDelegateSim
   public:
     explicit ThermoRotorInitialCondition(SPHBody &sph_body)
         : LocalDynamics(sph_body), DataDelegateSimple(sph_body),
-          pos_(*particles_->getVariableDataByName<Vecd>("Position")),
           phi_(*particles_->registerSharedVariable<Real>("Phi")){};
     void update(size_t index_i, Real dt)
     {
-        if (((pos_[index_i][1] - DH / 2) * (pos_[index_i][1] - DH / 2)) + ((pos_[index_i][0] - DL / 2) * (pos_[index_i][0] - DL / 2)) <= RS * RS)
-        {
-          phi_[index_i] = phi_rotor;
-        }
+        phi_[index_i] = phi_rotor;
     };
+
   protected:
-    StdLargeVec<Vecd> &pos_;
     StdLargeVec<Real> &phi_;
 };
 //----------------------------------------------------------------------
@@ -148,22 +131,14 @@ class ThermofluidBodyInitialCondition : public LocalDynamics, public DataDelegat
   public:
     explicit ThermofluidBodyInitialCondition(SPHBody &sph_body)
         : LocalDynamics(sph_body), DataDelegateSimple(sph_body),
-          pos_(*particles_->getVariableDataByName<Vecd>("Position")),
           phi_(*particles_->registerSharedVariable<Real>("Phi")){};
 
     void update(size_t index_i, Real dt)
     {
-        bool is_in_fluid_region =
-            ((pos_[index_i][1] >= 0 && pos_[index_i][1] <= DH) &&
-             (pos_[index_i][0] >= 0 && pos_[index_i][0] <= DL));
-        if (is_in_fluid_region)
-        {
-            phi_[index_i] = phi_fluid_initial;
-        }
+        phi_[index_i] = phi_fluid_initial;
     };
 
   protected:
-    StdLargeVec<Vecd> &pos_;
     StdLargeVec<Real> &phi_;
 };
 //----------------------------------------------------------------------
@@ -194,7 +169,7 @@ class InletInflowCondition : public fluid_dynamics::EmitterInflowCondition
   protected:
     virtual Vecd getTargetVelocity(Vecd &position, Vecd &velocity) override
     {
-        return Vec2d(2.0, 0.0);
+        return Vec2d(1.0, 0.0);
     }
 };
 //----------------------------------------------------------------------
@@ -239,6 +214,8 @@ int main(int ac, char *av[])
     InnerRelation wall_inner(wall);
     InnerRelation rotor_inner(rotor);
     ContactRelation water_body_contact(water_body, {&wall, &rotor});
+    ContactRelation water_wall_contact(water_body, {&wall});
+    ContactRelation water_rotor_contact(water_body, {&rotor});
     ContactRelation fluid_observer_contact(fluid_observer, {&water_body});
     ContactRelation wall_observer_contact(fluid_observer, {&wall});
     ContactRelation rotor_observer_contact(fluid_observer, {&rotor});
@@ -257,6 +234,7 @@ int main(int ac, char *av[])
     Dynamics1Level<fluid_dynamics::Integration2ndHalfWithWallRiemann> density_relaxation(water_body_inner, water_body_contact);
     InteractionWithUpdate<fluid_dynamics::DensitySummationComplexFreeSurface> update_density_by_summation(water_body_inner, water_body_contact);
     InteractionWithUpdate<fluid_dynamics::ViscousForceWithWall> viscous_force(water_body_inner, water_body_contact);
+    InteractionWithUpdate<fluid_dynamics::TransportVelocityCorrectionComplex<AllParticles>> transport_velocity_correction(water_body_inner, water_body_contact);
 
     Gravity gravity(Vecd(0.0, -gravity_g));
     SimpleDynamics<GravityForce> constant_gravity(water_body, gravity);
@@ -268,17 +246,9 @@ int main(int ac, char *av[])
     SimpleDynamics<fluid_dynamics::EmitterInflowInjection> emitter_injection(emitter, inlet_buffer);
 
     IsotropicDiffusion diffusion("Phi", "Phi", diffusion_coeff);
-    IsotropicDiffusion diffusion_wall("Phi", "Phi", diffusion_coeff_wall);
-    IsotropicDiffusion diffusion_rotor("Phi", "Phi", diffusion_coeff_rotor);
     ThermalRelaxationComplex thermal_relaxation_complex(
         ConstructorArgs(water_body_inner, &diffusion),
         ConstructorArgs(water_body_contact, &diffusion));
-    ThermalRelaxationComplex thermal_relaxation_fluid_wall(
-        ConstructorArgs(wall_inner, &diffusion_wall),
-        ConstructorArgs(water_body_contact, &diffusion_wall));
-    ThermalRelaxationComplex thermal_relaxation_fluid_rotor(
-        ConstructorArgs(rotor_inner, &diffusion_rotor),
-        ConstructorArgs(water_body_contact, &diffusion_rotor));
     SimpleDynamics<ThermoWallInitialCondition> thermowall_condition(wall);
     SimpleDynamics<ThermoRotorInitialCondition> thermorotor_condition(rotor);
     SimpleDynamics<ThermofluidBodyInitialCondition> thermofluid_initial_condition(water_body);
@@ -334,12 +304,12 @@ int main(int ac, char *av[])
     {
         Real integration_time = 0.0;
         /** Integrate time (loop) until the next output time. */
-        size_t total_particles = rotor.getBaseParticles().TotalRealParticles();
         while (integration_time < output_interval)
         {
             Real Dt = get_fluid_advection_time_step_size.exec();
             update_density_by_summation.exec();
             viscous_force.exec();
+            transport_velocity_correction.exec();
 
             /** Dynamics including pressure relaxation. */
             Real relaxation_time = 0.0;
@@ -350,8 +320,6 @@ int main(int ac, char *av[])
                 density_relaxation.exec(dt);
                 inflow_condition.exec();
                 thermal_relaxation_complex.exec(dt);
-                thermal_relaxation_fluid_wall.exec(dt);
-                thermal_relaxation_fluid_rotor.exec(dt);
                 dt = get_fluid_time_step_size.exec();
                 relaxation_time += dt;
                 integration_time += dt;
