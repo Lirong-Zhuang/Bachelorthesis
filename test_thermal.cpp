@@ -1,7 +1,6 @@
 /**
  * @file 	filling_tank_vertical.cpp
  * @brief 	2D example to show that a tank is verticaL filled by emitter.
- *  目标：现有代码中墙和转子似乎不会变温；每次运行后都有空指针错误，不知道代入oilcooling还会不会存在这个问题
  */
 #include "sphinxsys.h"
 using namespace SPH;
@@ -30,23 +29,22 @@ Real gravity_g = 1.0;                                   /**< Gravity force of fl
 Real U_f = 2.0 * sqrt(gravity_g * (inlet_height + LH)); /**< Characteristic velocity. */
 Real c_f = 10.0 * U_f;                                  /**< Reference sound speed. */
 Real diffusion_coeff = 1.0e-3;
-Real diffusion_coeff_wall = 1.0e-3;
 Real diffusion_coeff_rotor = 1.0e-3;
-Real Re = 100.0;                    /**< Reynolds number100. */
+Real K = (diffusion_coeff * diffusion_coeff_rotor) / (diffusion_coeff + diffusion_coeff_rotor);
+    Real Re = 100.0;                    /**< Reynolds number100. */
 Real mu_f = rho0_f * U_f * LL / Re; /**< Dynamics viscosity. */
 // Create a rotor.
-Real DS = 2;                              /**< Diameter of transmission shaft on rotor. */
-Real RS = 0.5 * DS;                       /**< Radius of transmission shaft on rotor. */
-Real reference_circle_radius = 0.25 * RS; /**< Radius of reference circlev on rotor. */
-Vecd center(DL / 2, DH / 2);              /**< Location of transmission shaft on rotor. */
-int resolution_circle = 50;       /**<Approximate the circle as the number of sides of the polygon. */
-Real rotor_rotation_velocity = 600; /**<Angular velocity rpm. */
+Real DS = 2;                                           /**< Diameter of transmission shaft on rotor. */
+Real RS = 0.5 * DS;                                    /**< Radius of transmission shaft on rotor. */
+Real reference_circle_radius = 0.25 * RS;              /**< Radius of reference circlev on rotor. */
+Vecd center(DL / 2, DH / 2);                           /**< Location of transmission shaft on rotor. */
+int resolution_circle = 50;                            /**<Approximate the circle as the number of sides of the polygon. */
+Real rotor_rotation_velocity = 600;                    /**<Angular velocity rpm. */
 Real Omega = -(rotor_rotation_velocity * 2 * Pi / 60); /**<Angle of rotor. */
 //----------------------------------------------------------------------
 //	Global parameters on the initial condition
 //----------------------------------------------------------------------
-Real phi_wall = 20.0;
-Real phi_rotor = 30.0;
+Real phi_rotor = 100.0;
 Real phi_fluid_initial = 0.0;
 //----------------------------------------------------------------------
 //	Geometries
@@ -87,24 +85,6 @@ class WallBoundary : public MultiPolygonShape
         multi_polygon_.addAPolygon(CreateInnerWallShape(), ShapeBooleanOps::sub);
         multi_polygon_.addABox(inlet_transform, inlet_halfsize, ShapeBooleanOps::sub);
     }
-};
-//----------------------------------------------------------------------
-//	Application dependent initial condition of wall.
-//----------------------------------------------------------------------
-class ThermoWallInitialCondition : public LocalDynamics, public DataDelegateSimple
-{
-  public:
-    explicit ThermoWallInitialCondition(SPHBody &sph_body)
-        : LocalDynamics(sph_body), DataDelegateSimple(sph_body),
-          phi_(*particles_->registerSharedVariable<Real>("Phi")){};
-
-    void update(size_t index_i, Real dt)
-    {
-        phi_[index_i] = phi_wall;
-    };
-
-  protected:
-    StdLargeVec<Real> &phi_;
 };
 //----------------------------------------------------------------------
 //	Application dependent initial condition of rotor.
@@ -169,7 +149,7 @@ class InletInflowCondition : public fluid_dynamics::EmitterInflowCondition
   protected:
     virtual Vecd getTargetVelocity(Vecd &position, Vecd &velocity) override
     {
-        return Vec2d(2.0, 0.0);
+        return Vec2d(3.0, 0.0);
     }
 };
 //----------------------------------------------------------------------
@@ -199,7 +179,7 @@ int main(int ac, char *av[])
     SolidBody rotor(sph_system, makeShared<RotorBoundary>("Rotor"));
     rotor.defineMaterial<Solid>();
     rotor.generateParticles<BaseParticles, Lattice>();
-    
+
     ObserverBody fluid_observer(sph_system, "FluidObserver");
     fluid_observer.generateParticles<ObserverParticles>(observation_location);
     //----------------------------------------------------------------------
@@ -211,18 +191,18 @@ int main(int ac, char *av[])
     //  inner and contact relations.
     //----------------------------------------------------------------------
     InnerRelation water_body_inner(water_body);
-    InnerRelation wall_inner(wall);
     InnerRelation rotor_inner(rotor);
     ContactRelation water_body_contact(water_body, {&wall, &rotor});
-    ContactRelation water_wall_contact(water_body, {&wall});
     ContactRelation water_rotor_contact(water_body, {&rotor});
+    ContactRelation rotor_contact(rotor, {&water_body});
     ContactRelation fluid_observer_contact(fluid_observer, {&water_body});
-    ContactRelation wall_observer_contact(fluid_observer, {&wall});
     ContactRelation rotor_observer_contact(fluid_observer, {&rotor});
     //----------------------------------------------------------------------
     // Combined relations built from basic relations
     //----------------------------------------------------------------------
     ComplexRelation water_body_complex(water_body_inner, water_body_contact);
+    ComplexRelation water_rotor_complex(water_body_inner, water_rotor_contact);
+    ComplexRelation rotor_complex(rotor_inner, rotor_contact);
     //----------------------------------------------------------------------
     //	Define all numerical methods which are used in this case.
     //----------------------------------------------------------------------
@@ -246,10 +226,14 @@ int main(int ac, char *av[])
     SimpleDynamics<fluid_dynamics::EmitterInflowInjection> emitter_injection(emitter, inlet_buffer);
 
     IsotropicDiffusion diffusion("Phi", "Phi", diffusion_coeff);
+    IsotropicDiffusion contact("Phi", "Phi", K);
     ThermalRelaxationComplex thermal_relaxation_complex(
         ConstructorArgs(water_body_inner, &diffusion),
-        ConstructorArgs(water_body_contact, &diffusion));
-    SimpleDynamics<ThermoWallInitialCondition> thermowall_condition(wall);
+        ConstructorArgs(water_rotor_contact, &contact));
+    IsotropicDiffusion diffusion_rotor("Phi", "Phi", diffusion_coeff_rotor);
+    ThermalRelaxationComplex thermal_relaxation_complex_rotor(
+        ConstructorArgs(rotor_inner, &diffusion_rotor),
+        ConstructorArgs(rotor_contact, &contact));
     SimpleDynamics<ThermoRotorInitialCondition> thermorotor_condition(rotor);
     SimpleDynamics<ThermofluidBodyInitialCondition> thermofluid_initial_condition(water_body);
 
@@ -261,12 +245,10 @@ int main(int ac, char *av[])
     BodyStatesRecordingToVtp body_states_recording(sph_system);
     body_states_recording.addToWrite<int>(water_body, "Indicator");
     body_states_recording.addToWrite<Real>(water_body, "Phi");
-    body_states_recording.addToWrite<Real>(wall, "Phi");
     body_states_recording.addToWrite<Real>(rotor, "Phi");
     RegressionTestDynamicTimeWarping<ReducedQuantityRecording<TotalMechanicalEnergy>> write_water_mechanical_energy(water_body, gravity);
     RegressionTestDynamicTimeWarping<ObservedQuantityRecording<Real>> write_recorded_water_pressure("Pressure", fluid_observer_contact);
     RegressionTestEnsembleAverage<ObservedQuantityRecording<Real>> write_fluid_phi("Phi", fluid_observer_contact);
-    RegressionTestEnsembleAverage<ObservedQuantityRecording<Real>> write_wall_phi("Phi", wall_observer_contact);
     RegressionTestEnsembleAverage<ObservedQuantityRecording<Real>> write_rotor_phi("Phi", rotor_observer_contact);
     //----------------------------------------------------------------------
     //	Prepare the simulation with cell linked list, configuration
@@ -276,7 +258,6 @@ int main(int ac, char *av[])
     sph_system.initializeSystemConfigurations();
     wall_normal_direction.exec();
     rotor_normal_direction.exec();
-    thermowall_condition.exec();
     thermorotor_condition.exec();
     thermofluid_initial_condition.exec();
     indicate_free_surface.exec();
@@ -286,7 +267,7 @@ int main(int ac, char *av[])
     //----------------------------------------------------------------------
     size_t number_of_iterations = sph_system.RestartStep();
     int screen_output_interval = 100;
-    Real end_time = 30.0;
+    Real end_time = 50.0;
     Real output_interval = 0.1;
     Real dt = 0.0; /**< Default acoustic time step sizes. */
     /** statistics for computing CPU time. */
@@ -320,6 +301,7 @@ int main(int ac, char *av[])
                 density_relaxation.exec(dt);
                 inflow_condition.exec();
                 thermal_relaxation_complex.exec(dt);
+                thermal_relaxation_complex_rotor.exec(dt);
                 dt = get_fluid_time_step_size.exec();
                 relaxation_time += dt;
                 integration_time += dt;
@@ -340,7 +322,10 @@ int main(int ac, char *av[])
 
             water_body.updateCellLinkedListWithParticleSort(100);
             water_body_complex.updateConfiguration();
+            water_rotor_complex.updateConfiguration();
+            rotor_complex.updateConfiguration();
             fluid_observer_contact.updateConfiguration();
+            rotor_observer_contact.updateConfiguration();
         }
 
         TickCount t2 = TickCount::now();
@@ -350,7 +335,6 @@ int main(int ac, char *av[])
         body_states_recording.writeToFile();
         write_recorded_water_pressure.writeToFile(number_of_iterations);
         write_fluid_phi.writeToFile(number_of_iterations);
-        write_wall_phi.writeToFile(number_of_iterations);
         write_rotor_phi.writeToFile(number_of_iterations);
         TickCount t3 = TickCount::now();
         interval += t3 - t2;
@@ -361,12 +345,6 @@ int main(int ac, char *av[])
     tt = t4 - t1 - interval;
     std::cout << "Total wall time for computation: " << tt.seconds()
               << " seconds." << std::endl;
-
-    write_water_mechanical_energy.testResult();
-    write_recorded_water_pressure.testResult();
-    write_fluid_phi.testResult();
-    write_wall_phi.testResult();
-    write_rotor_phi.testResult();
 
     return 0;
 }
