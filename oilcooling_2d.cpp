@@ -10,14 +10,14 @@ using namespace SPH;
 //----------------------------------------------------------------------
 //	Global geometry, material parameters and numerical setup.
 //----------------------------------------------------------------------
-Real DM = 200 / 10; /**< Diameter of motor housing[m]. */
-Real DR = 120 / 10; /**< Diameter of rotor[m]. */
-Real DS = 40 / 10;  /**< Diameter of transmission shaft on rotor[m]. */
-Real WL = 20 / 10;  /**< Winding length[m]. */
-Real WH = 25 / 10;  /**< Winding height[m]. */
-Real AG = 1 / 10;   /**< Air-gap[m]. */
-Real LL = 2.8 / 10; /**< Inflow region length[m]. */
-Real DO = 10 / 10;  /**< Outflow diameter[m]. */
+Real DM = 0.2; /**< Diameter of motor housing[m]. */
+Real DR = 0.12; /**< Diameter of rotor[m]. */
+Real DS = 0.04;  /**< Diameter of transmission shaft on rotor[m]. */
+Real WL = 0.02;  /**< Winding length[m]. */
+Real WH = 0.025;  /**< Winding height[m]. */
+Real AG = 0.001;   /**< Air-gap[m]. */
+Real LL = 0.0028; /**< Inflow region length[m]. */
+Real DO = 0.01;  /**< Outflow diameter[m]. */
 
 Real RM = 0.5 * DM;                      /**< Radius of motor housing. */
 Real RR = 0.5 * DR;                      /**< Radius of rotor. */
@@ -26,8 +26,8 @@ Real Wnum = 12;                          /**< Winding Number. */
 Real angle_increment = 2 * Pi / Wnum;
 Real WD = RR + AG + 0.5 * WH;            /**< Distance from center point to the center of a winding. */
 Real ZW = RR + AG;                       /**< Distance from center point to the site of a winding. */
-int resolution_circle = 100;             /**<Approximate the circle as the number of sides of the polygon. */
-Real resolution_ref = 0.05;             /**< Initial reference particle spacing. */
+int resolution_circle = 50;             /**<Approximate the circle as the number of sides of the polygon. */
+Real resolution_ref = 0.0014;             /**< Initial reference particle spacing. */
 Real BW = resolution_ref * 4;            /**< Extending width for wall boundary. */
 Real LH = 2.0 * BW;                      /**< Inflows region height. */
 Real OH = LH;                            /**< Outflows region height. */
@@ -36,7 +36,6 @@ Real Lstart = (Wnum - 2 * Lnum + 2) / 4; /**< Start location of inlets. */
 Real Lend = (Wnum + 2 * Lnum - 2) / 4;   /**< End location of inlets. */
 Real inlet_height = DM - BW;             /**< Inflow location height. */
 Real inlet_distance = -(0.5 * LL);       /**< Inflow location distance. */
-Real v_inlet = 1.0;                      /**< Inflow vilocity. */
 Vec2d inlet_halfsize = Vec2d(0.5 * LH, 0.5 * LL);
 Vec2d inlet_translation = Vec2d(0, RM);
 Vec2d outlet_halfsize = Vec2d(0.5 * DO, 0.5 * OH);
@@ -46,19 +45,22 @@ BoundingBox system_domain_bounds(Vec2d(-BW - RM, -BW - RM), Vec2d(RM + BW, RM + 
 Vecd center(0.0, 0.0);
 // observer location
 StdVec<Vecd> observation_location = {Vecd(0, 0)};
-Real rho0_f = 840;                                      /**< Reference density of fluid [kg / m^3]. */
+Real rho0_f = 830;                                      /**< Reference density of fluid [kg / m^3]. */
 Real gravity_g = 9.81;                                   /**< Gravity force of fluid [m / s^2]. */
-Real U_f = sqrt(v_inlet * v_inlet + 2 * gravity_g * (inlet_height + LH)); /**< Characteristic velocity. */
-Real c_f = 10.0 * U_f;                                  /**< Reference sound speed. */
 // dynamics informations of rotor
 Real rotor_rotation_velocity = 300;                    /**<Angular velocity rpm. */
-Real Omega = -(rotor_rotation_velocity * 2 * Pi / 60); /**<Angle of rotor. */
+Real Omega = -(rotor_rotation_velocity * 2 * Pi / 60); /**<Angle velocity of rotor. */
+// dynamics informations of oil
+Real flow_rate = 65;                                   /**< Oil flow rate [L / h] */
+Real v_inlet = (flow_rate * 0.001 / 3600) / (Pi * LL * LL);               /**< Inflow vilocity [m / s]. */
+Real U_f = sqrt(v_inlet * v_inlet + 2 * gravity_g * (inlet_height + LH)); /**< Characteristic velocity. */
+Real c_f = 10.0 * U_f;                                                    /**< Reference sound speed. */
 // thermal parameters
 Real mu_f = 0.015; /**< Dynamics viscosity [Pa * s]. */
-Real phi_winding = 100.0;
-Real phi_fluid_initial = 0.0;
-Real k_oil = 1.0e-3;                                       /**< Diffusion coefficient of oil 2.0e-7. */
-Real k_winding = 1.0e-3;                                    /**< Diffusion coefficient of winding 1.1e-6. */
+Real phi_winding = 90.0;
+Real phi_fluid_initial = 50.0;
+Real k_oil = 7.83e-8;                                       /**< Diffusion coefficient of oil 2.0e-7. */
+Real k_winding = 1.14e-4;                                    /**< Diffusion coefficient of winding 1.1e-6. */
 Real k_contact = (k_oil * k_winding) / (k_oil + k_winding);/**< Thermal conductivity between winding and oil. */
 //----------------------------------------------------------------------
 //	Geometry of the other 4 inlets.
@@ -207,7 +209,7 @@ int main(int ac, char *av[])
     FluidBody oil_body(sph_system, makeShared<FluidBoundary>("OilBody"));
     oil_body.sph_adaptation_->resetKernel<KernelTabulated<KernelWendlandC2>>(20);
     oil_body.defineMaterial<WeaklyCompressibleFluid>(rho0_f, c_f, mu_f);
-    ParticleBuffer<ReserveSizeFactor> inlet_buffer(350.0);
+    ParticleBuffer<ReserveSizeFactor> inlet_buffer(1000.0);
     oil_body.generateParticlesWithReserve<BaseParticles, Lattice>(inlet_buffer);
 
     SolidBody wall(sph_system, makeShared<WallBoundary>("Wall"));
@@ -346,8 +348,8 @@ int main(int ac, char *av[])
     //----------------------------------------------------------------------
     size_t number_of_iterations = sph_system.RestartStep();
     int screen_output_interval = 100;
-    Real end_time = 10.0;
-    Real output_interval = 0.1;
+    Real end_time = 5.0;
+    Real output_interval = 0.05;
     Real dt = 0.0; /**< Default acoustic time step sizes. */
     /** statistics for computing CPU time. */
     TickCount t1 = TickCount::now();
