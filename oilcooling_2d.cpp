@@ -1,8 +1,8 @@
 /**
- * @file 	oilcooling_2d.cpp
+ * @file 	oilcooling_filling.cpp
  * @brief 	2D example to show the filling process of oil cooling system in a running electric motor.
  * @details This is the feasibility verification for the 3D model based on the experimental study of the team
- * 			of Tanguy Davin.Coding ist based on the program filling_tank.cpp of Professor Xiangyu Hu at TUM.
+ * 			of Tanguy Davin.Coding ist based on the programm filling_tank.cpp of Professor Xiangyu Hu at TUM.
  * @author 	Lirong Zhuang
  */
 #include "sphinxsys.h"
@@ -10,60 +10,60 @@ using namespace SPH;
 //----------------------------------------------------------------------
 //	Global geometry, material parameters and numerical setup.
 //----------------------------------------------------------------------
-Real DM = 0.2; /**< Diameter of motor housing[m]. */
-Real DR = 0.12; /**< Diameter of rotor[m]. */
-Real DS = 0.04;  /**< Diameter of transmission shaft on rotor[m]. */
-Real WL = 0.02;  /**< Winding length[m]. */
-Real WH = 0.025;  /**< Winding height[m]. */
-Real AG = 0.001;   /**< Air-gap[m]. */
-Real LL = 0.0028; /**< Inflow region length[m]. */
-Real DO = 0.01;  /**< Outflow diameter[m]. */
+Real DM = 0.2;    /**< Diameter of motor hausing. */
+Real DR = 0.12;   /**< Diameter of rotor. */
+Real DS = 0.04;   /**< Diameter of transmission shaft on rotor. */
+Real WL = 0.028;  /**< Winding length. */
+Real WH = 0.025;  /**< Winding height. */
+Real AG = 0.001;  /**< Air-gap. */
+Real LL = 0.0028; /**< Inflow region length. */
+Real DO = 0.03;   /**< Outflow diameter. */
 
-Real RM = 0.5 * DM;                      /**< Radius of motor housing. */
-Real RR = 0.5 * DR;                      /**< Radius of rotor. */
-Real RS = 0.5 * DS;                      /**< Radius of transmission shaft on rotor. */
-Real Wnum = 12;                          /**< Winding Number. */
+Real RM = 0.5 * DM; /**< Radius of motor hausing. */
+Real RR = 0.5 * DR; /**< Radius of rotor. */
+Real RS = 0.5 * DS; /**< Radius of transmission shaft on rotor. */
+Real Wnum = 12;     /**< Winding Number. */
 Real angle_increment = 2 * Pi / Wnum;
 Real WD = RR + AG + 0.5 * WH;            /**< Distance from center point to the center of a winding. */
 Real ZW = RR + AG;                       /**< Distance from center point to the site of a winding. */
-int resolution_circle = 50;             /**<Approximate the circle as the number of sides of the polygon. */
-Real resolution_ref = 0.0014;             /**< Initial reference particle spacing. */
+int resolution_circle = 200;             /**<Approximate the circle as the number of sides of the polygon. */
+Real resolution_ref = 0.0007;             /**< Initial reference particle spacing. */
 Real BW = resolution_ref * 4;            /**< Extending width for wall boundary. */
 Real LH = 2.0 * BW;                      /**< Inflows region height. */
 Real OH = LH;                            /**< Outflows region height. */
 Real Lnum = 5;                           /**< Inflows number. */
 Real Lstart = (Wnum - 2 * Lnum + 2) / 4; /**< Start location of inlets. */
 Real Lend = (Wnum + 2 * Lnum - 2) / 4;   /**< End location of inlets. */
-Real inlet_height = DM - BW;             /**< Inflow location height. */
-Real inlet_distance = -(0.5 * LL);       /**< Inflow location distance. */
+Real inlet_height = RM - BW;             /**< Inflow location height */
 Vec2d inlet_halfsize = Vec2d(0.5 * LH, 0.5 * LL);
 Vec2d inlet_translation = Vec2d(0, RM);
-Vec2d outlet_halfsize = Vec2d(0.5 * DO, 0.5 * OH);
-Vec2d outlet_translation = Vec2d(0, -RM);
+Vec2d outlet_halfsize = Vec2d(BW + 0.01, 0.5 * DO);
+Vec2d outlet_translation = Vec2d(0, -RM + 0.01);
+Transform outlet_transform(Rotation2d(-(Pi / 2)), outlet_translation);
 Transform inlet_transform(Rotation2d(-(Pi / 2)), inlet_translation);
 BoundingBox system_domain_bounds(Vec2d(-BW - RM, -BW - RM), Vec2d(RM + BW, RM + BW));
 Vecd center(0.0, 0.0);
 // observer location
 StdVec<Vecd> observation_location = {Vecd(0, 0)};
-Real rho0_f = 830;                                      /**< Reference density of fluid [kg / m^3]. */
-Real gravity_g = 9.81;                                   /**< Gravity force of fluid [m / s^2]. */
-// dynamics informations of rotor
-Real rotor_rotation_velocity = 300;                    /**<Angular velocity rpm. */
-Real Omega = -(rotor_rotation_velocity * 2 * Pi / 60); /**<Angle velocity of rotor. */
+Real rho0_f = 830;                                      /**< Reference density of fluid. */
+Real gravity_g = 9.81;                                   /**< Gravity force of fluid. */
 // dynamics informations of oil
-Real flow_rate = 65;                                   /**< Oil flow rate [L / h] */
-Real v_inlet = (flow_rate * 0.001 / 3600) / (Pi * LL * LL);               /**< Inflow vilocity [m / s]. */
+Real flow_rate = 110;                                       /**< Oil flow rate [L / h] */
+Real v_inlet = (flow_rate * 0.001 / 3600) / (Pi * LL * LL); /**< Inflow vilocity [m / s]. */
 Real U_f = sqrt(v_inlet * v_inlet + 2 * gravity_g * (inlet_height + LH)); /**< Characteristic velocity. */
-Real c_f = 10.0 * U_f;                                                    /**< Reference sound speed. */
+Real c_f = 10.0 * U_f;                                  /**< Reference sound speed. */
+// dynamics informations of rotor
+Real rotor_rotation_velocity = 900;                    /**<Angular velocity rpm. */
+Real Omega = -(rotor_rotation_velocity * 2 * Pi / 60); /**<Angle of rotor. */
 // thermal parameters
-Real mu_f = 0.015; /**< Dynamics viscosity [Pa * s]. */
-Real phi_winding = 90.0;
-Real phi_fluid_initial = 50.0;
-Real k_oil = 7.83e-8;                                       /**< Diffusion coefficient of oil 2.0e-7. */
-Real k_winding = 1.14e-4;                                    /**< Diffusion coefficient of winding 1.1e-6. */
-Real k_contact = (k_oil * k_winding) / (k_oil + k_winding);/**< Thermal conductivity between winding and oil. */
+Real mu_f = 0.0249;                                             /**< Dynamics viscosity [Pa * s]. */
+Real phi_winding = 90.0;                                        /**< Temperature of winding at begin. */
+Real phi_fluid_initial = 50.0;                                  /**< Temperature of oil at begin. */
+Real k_oil = 8.03e-8;                                           /**< Diffusion coefficient of oil 2.0e-7. */
+Real k_winding = 1.14e-4;                                       /**< Diffusion coefficient of winding 1.1e-6. */
+Real k_contact = (2 * k_oil * k_winding) / (k_oil + k_winding); /**< Thermal conductivity between winding and oil. */
 //----------------------------------------------------------------------
-//	Geometry of the other 4 inlets.
+//	Geometrie of the othor 4 inlets.
 //----------------------------------------------------------------------
 Vec2d inlet2_translation = Vec2d(RM * cos(5 * angle_increment), RM *sin(5 * angle_increment));
 Transform inlet2_transform(Rotation2d(-(angle_increment)), inlet2_translation);
@@ -81,10 +81,10 @@ class WallBoundary : public MultiPolygonShape
   public:
     explicit WallBoundary(const std::string &shape_name) : MultiPolygonShape(shape_name)
     {
-        multi_polygon_.addACircle(center, (RM + BW) , resolution_circle, ShapeBooleanOps::add);         /**< Outer wall of motor hausing. */
-        multi_polygon_.addACircle(center, RM , resolution_circle, ShapeBooleanOps::sub);                /**< Inner wall of motor hausing. */
-        multi_polygon_.addABox(inlet_transform , inlet_halfsize, ShapeBooleanOps::sub);                 /**< Top Inlets. */
-        multi_polygon_.addABox(Transform(outlet_translation), outlet_halfsize, ShapeBooleanOps::sub);   /**< Outlets. */
+        multi_polygon_.addACircle(center, (RM + BW), resolution_circle, ShapeBooleanOps::add);        /**< Outer wall of motor hausing. */
+        multi_polygon_.addACircle(center, RM, resolution_circle, ShapeBooleanOps::sub);               /**< Inner wall of motor hausing. */
+        multi_polygon_.addABox(inlet_transform, inlet_halfsize, ShapeBooleanOps::sub);                /**< Top Inlets. */
+        multi_polygon_.addABox(outlet_transform, outlet_halfsize, ShapeBooleanOps::sub);              /**< Outlets. */
         multi_polygon_.addABox(inlet2_transform, inlet_halfsize, ShapeBooleanOps::sub);
         multi_polygon_.addABox(inlet3_transform, inlet_halfsize, ShapeBooleanOps::sub);
         multi_polygon_.addABox(inlet4_transform, inlet_halfsize, ShapeBooleanOps::sub);
@@ -131,7 +131,7 @@ class FluidBoundary : public MultiPolygonShape
   public:
     explicit FluidBoundary(const std::string &shape_name) : MultiPolygonShape(shape_name)
     {
-        multi_polygon_.addABox(inlet_transform, inlet_halfsize, ShapeBooleanOps::add);                /**< Top Inlets. */
+        multi_polygon_.addABox(inlet_transform, inlet_halfsize, ShapeBooleanOps::add); /**< Top Inlets. */
         multi_polygon_.addABox(inlet2_transform, inlet_halfsize, ShapeBooleanOps::add);
         multi_polygon_.addABox(inlet3_transform, inlet_halfsize, ShapeBooleanOps::add);
         multi_polygon_.addABox(inlet4_transform, inlet_halfsize, ShapeBooleanOps::add);
@@ -209,7 +209,7 @@ int main(int ac, char *av[])
     FluidBody oil_body(sph_system, makeShared<FluidBoundary>("OilBody"));
     oil_body.sph_adaptation_->resetKernel<KernelTabulated<KernelWendlandC2>>(20);
     oil_body.defineMaterial<WeaklyCompressibleFluid>(rho0_f, c_f, mu_f);
-    ParticleBuffer<ReserveSizeFactor> inlet_buffer(1000.0);
+    ParticleBuffer<ReserveSizeFactor> inlet_buffer(4000.0);
     oil_body.generateParticlesWithReserve<BaseParticles, Lattice>(inlet_buffer);
 
     SolidBody wall(sph_system, makeShared<WallBoundary>("Wall"));
@@ -258,7 +258,6 @@ int main(int ac, char *av[])
     Dynamics1Level<fluid_dynamics::Integration1stHalfWithWallRiemann> pressure_relaxation(oil_body_inner, oil_body_contact);
     Dynamics1Level<fluid_dynamics::Integration2ndHalfWithWallRiemann> density_relaxation(oil_body_inner, oil_body_contact);
     InteractionWithUpdate<fluid_dynamics::DensitySummationComplexFreeSurface> update_density_by_summation(oil_body_inner, oil_body_contact);
-    InteractionWithUpdate<fluid_dynamics::TransportVelocityCorrectionComplex<AllParticles>> transport_velocity_correction(oil_body_inner, oil_body_contact);
 
     Gravity gravity(Vecd(0.0, -gravity_g));
     SimpleDynamics<GravityForce> constant_gravity(oil_body, gravity);
@@ -281,7 +280,9 @@ int main(int ac, char *av[])
     BodyAlignedBoxByParticle emitter5(oil_body, makeShared<AlignedBoxShape>(xAxis, inlet5_transform, inlet_halfsize));
     SimpleDynamics<InletInflowCondition> inflow_condition5(emitter5);
     SimpleDynamics<fluid_dynamics::EmitterInflowInjection> emitter_injection5(emitter5, inlet_buffer);
-
+    BodyAlignedBoxByCell outlet_disposer(oil_body, makeShared<AlignedBoxShape>(xAxis, outlet_transform, outlet_halfsize));
+    SimpleDynamics<fluid_dynamics::DisposerOutflowDeletion> outlet_disposer_outflow_deletion(outlet_disposer);
+    
     IsotropicDiffusion diffusion_oil("Phi", "Phi", k_oil);
     IsotropicDiffusion diffusion_winding("Phi", "Phi", k_winding);
     IsotropicDiffusion conductivity_oil_winding("Phi", "Phi", k_contact);
@@ -294,7 +295,6 @@ int main(int ac, char *av[])
     SimpleDynamics<ThermoWindingInitialCondition> thermowinding_condition(winding);
     SimpleDynamics<ThermofluidBodyInitialCondition> thermofluid_initial_condition(oil_body);
 
-    InteractionDynamics<fluid_dynamics::VorticityInner> compute_vorticity(oil_body_inner);
     //----------------------------------------------------------------------
     //	File output and regression check.
     //----------------------------------------------------------------------
@@ -348,7 +348,7 @@ int main(int ac, char *av[])
     //----------------------------------------------------------------------
     size_t number_of_iterations = sph_system.RestartStep();
     int screen_output_interval = 100;
-    Real end_time = 5.0;
+    Real end_time = 10.0;
     Real output_interval = 0.05;
     Real dt = 0.0; /**< Default acoustic time step sizes. */
     /** statistics for computing CPU time. */
@@ -371,8 +371,6 @@ int main(int ac, char *av[])
             Real Dt = get_fluid_advection_time_step_size.exec();
             update_density_by_summation.exec();
             viscous_force.exec();
-            transport_velocity_correction.exec();
-
             /** Dynamics including pressure relaxation. */
             Real relaxation_time = 0.0;
             while (relaxation_time < Dt)
@@ -415,6 +413,8 @@ int main(int ac, char *av[])
             emitter_injection3.exec();
             emitter_injection4.exec();
             emitter_injection5.exec();
+            /** outflow delete*/
+            outlet_disposer_outflow_deletion.exec();
             /** Update cell linked list and configuration. */
 
             oil_body.updateCellLinkedListWithParticleSort(100);
@@ -426,7 +426,6 @@ int main(int ac, char *av[])
         }
 
         TickCount t2 = TickCount::now();
-        compute_vorticity.exec();
         write_water_mechanical_energy.writeToFile(number_of_iterations);
         indicate_free_surface.exec();
         body_states_recording.writeToFile();
@@ -442,6 +441,7 @@ int main(int ac, char *av[])
     tt = t4 - t1 - interval;
     std::cout << "Total wall time for computation: " << tt.seconds()
               << " seconds." << std::endl;
+
 
     return 0;
 }
