@@ -10,30 +10,30 @@ using namespace SPH;
 //----------------------------------------------------------------------
 //	Global geometry, material parameters and numerical setup.
 //----------------------------------------------------------------------
-Real DM = 0.196;    /**< Diameter of motor hausing. */
-Real DRO = 0.12;   /**< Diameter of outer rotor. */
-Real DRI = 0.04;   /**< Diameter of inner rotor. */
-Real WL = 0.028;  /**< Winding length. */
+Real DM = 0.196;  /**< Diameter of motor hausing. */
+Real DRO = 0.12;  /**< Diameter of outer rotor. */
+Real DRI = 0.04;  /**< Diameter of inner rotor. */
+Real WL = 0.03;   /**< Winding length. */
 Real WH = 0.025;  /**< Winding height. */
 Real AG = 0.001;  /**< Air-gap. */
 Real LL = 0.0028; /**< Inflow region length. */
 Real DO = 0.03;   /**< Outflow diameter. */
 
-Real RM = 0.5 * DM; /**< Radius of motor hausing. */
-Real RR = 0.5 * DRO; /**< Radius of rotor. */
-Real Wnum = 12;     /**< Winding Number. */
+Real RM = 0.5 * DM;  /**< Radius of motor hausing. */
+Real RR = 0.5 * DRI; /**< Radius of rotor. */
+Real Wnum = 12;      /**< Winding Number. */
 Real angle_increment = 2 * Pi / Wnum;
-Real WD = 0.5 * DRO + AG + 0.5 * WH;      /**< Distance from center point to the center of a winding. */
-Real ZW = 0.5 * DRO + AG;                 /**< Distance from center point to the site of a winding. */
+Real WD = 0.5 * DRO + AG + 0.5 * WH;     /**< Distance from center point to the center of a winding. */
+Real ZW = 0.5 * DRO + AG;                /**< Distance from center point to the site of a winding. */
 int resolution_circle = 200;             /**<Approximate the circle as the number of sides of the polygon. */
 Real resolution_ref = 0.0007;            /**< Initial reference particle spacing. */
 Real BW = resolution_ref * 4;            /**< Extending width for wall boundary. */
-Real LH = resolution_ref * 16;            /**< Inflows region height. */
+Real LH = resolution_ref * 16;           /**< Inflows region height. */
 Real OH = LH;                            /**< Outflows region height. */
 Real Lnum = 5;                           /**< Inflows number. */
 Real Lstart = (Wnum - 2 * Lnum + 2) / 4; /**< Start location of inlets. */
 Real Lend = (Wnum + 2 * Lnum - 2) / 4;   /**< End location of inlets. */
-Real inlet_height = RM + BW - LH;             /**< Inflow location height */
+Real inlet_height = RM + BW - LH;        /**< Inflow location height */
 Vec2d inlet_halfsize = Vec2d(0.5 * LH, 0.5 * LL);
 Real R_inlet = RM + BW - 0.5 * LH;
 Vec2d inlet_translation = Vec2d(0, R_inlet);
@@ -203,7 +203,10 @@ int main(int ac, char *av[])
 {
     /** Build up a SPHSystem */
     SPHSystem sph_system(system_domain_bounds, resolution_ref);
+    sph_system.setRunParticleRelaxation(true); // Tag for run particle relaxation for body-fitted distribution
+    sph_system.setReloadParticles(true);        // Tag for computation with save particles distribution
     sph_system.handleCommandlineOptions(ac, av);
+    IOEnvironment io_environment(sph_system);
     /** Set the starting time. */
     GlobalStaticVariables::physical_time_ = 0.0;
     //----------------------------------------------------------------------
@@ -217,24 +220,97 @@ int main(int ac, char *av[])
 
     SolidBody wall(sph_system, makeShared<WallBoundary>("Wall"));
     wall.defineMaterial<Solid>();
-    wall.generateParticles<BaseParticles, Lattice>();
+    wall.defineBodyLevelSetShape()->writeLevelSet(sph_system);
+    (!sph_system.RunParticleRelaxation() && sph_system.ReloadParticles())
+        ? wall.generateParticles<BaseParticles, Reload>(wall.getName())
+        : wall.generateParticles<BaseParticles, Lattice>();
 
     SolidBody rotor(sph_system, makeShared<RotorBoundary>("Rotor"));
     rotor.defineMaterial<Solid>();
-    rotor.generateParticles<BaseParticles, Lattice>();
+    rotor.defineBodyLevelSetShape()->writeLevelSet(sph_system);
+    (!sph_system.RunParticleRelaxation() && sph_system.ReloadParticles())
+        ? rotor.generateParticles<BaseParticles, Reload>(rotor.getName())
+        : rotor.generateParticles<BaseParticles, Lattice>();
 
     SolidBody winding(sph_system, makeShared<WindingBoundary>("Winding"));
     winding.defineMaterial<Solid>();
-    winding.generateParticles<BaseParticles, Lattice>();
+    winding.defineBodyLevelSetShape()->writeLevelSet(sph_system);
+    (!sph_system.RunParticleRelaxation() && sph_system.ReloadParticles())
+        ? winding.generateParticles<BaseParticles, Reload>(winding.getName())
+        : winding.generateParticles<BaseParticles, Lattice>();
 
     ObserverBody fluid_observer(sph_system, "FluidObserver");
     fluid_observer.generateParticles<ObserverParticles>(observation_location);
-    ObserverBody slot_observer(sph_system, "SlotObserver");
+    ObserverBody slot_observer(sph_system, "ObserverSlot");
     slot_observer.generateParticles<ObserverParticles>(observation_location_slot);
-    ObserverBody tooth_observer(sph_system, "ToothObserver");
+    ObserverBody tooth_observer(sph_system, "ObserverTooth");
     tooth_observer.generateParticles<ObserverParticles>(observation_location_tooth);
-    ObserverBody yoke_observer(sph_system, "YokeObserver");
+    ObserverBody yoke_observer(sph_system, "ObserverYoke");
     yoke_observer.generateParticles<ObserverParticles>(observation_location_yoke);
+    //----------------------------------------------------------------------
+    //	Run particle relaxation for body-fitted distribution if chosen.
+    //----------------------------------------------------------------------
+    if (sph_system.RunParticleRelaxation())
+    {
+        //----------------------------------------------------------------------
+        //	Define body relation map used for particle relaxation.
+        //----------------------------------------------------------------------
+        InnerRelation wall_inner(wall);
+        InnerRelation rotor_inner(rotor);
+        InnerRelation winding_inner(winding);
+        //----------------------------------------------------------------------
+        //	Methods used for particle relaxation.
+        //----------------------------------------------------------------------
+        using namespace relax_dynamics;
+        SimpleDynamics<RandomizeParticlePosition> random_wall_particles(wall);
+        SimpleDynamics<RandomizeParticlePosition> random_rotor_particles(rotor);
+        SimpleDynamics<RandomizeParticlePosition> random_winding_particles(winding);
+        RelaxationStepInner relaxation_step_inner_wall(wall_inner);
+        RelaxationStepInner relaxation_step_inner_rotor(rotor_inner);
+        RelaxationStepInner relaxation_step_inner_winding(winding_inner);
+        BodyStatesRecordingToVtp write_wall_to_vtp(wall);
+        BodyStatesRecordingToVtp write_rotor_to_vtp(rotor);
+        BodyStatesRecordingToVtp write_winding_to_vtp(winding);
+        ReloadParticleIO write_wall_particle_reload_files(wall);
+        ReloadParticleIO write_rotor_particle_reload_files(rotor);
+        ReloadParticleIO write_winding_particle_reload_files(winding);
+        //----------------------------------------------------------------------
+        //	Particle relaxation starts here.
+        //----------------------------------------------------------------------
+        random_wall_particles.exec(0.25);
+        random_rotor_particles.exec(0.25);
+        random_winding_particles.exec(0.25);
+        relaxation_step_inner_wall.SurfaceBounding().exec();
+        relaxation_step_inner_rotor.SurfaceBounding().exec();
+        relaxation_step_inner_winding.SurfaceBounding().exec();
+        write_wall_to_vtp.writeToFile(0);
+        write_rotor_to_vtp.writeToFile(0);
+        write_winding_to_vtp.writeToFile(0);
+        //----------------------------------------------------------------------
+        //	Relax particles of the insert body.
+        //----------------------------------------------------------------------
+        int ite_p = 0;
+        while (ite_p < 1000)
+        {
+            relaxation_step_inner_wall.exec();
+            relaxation_step_inner_rotor.exec();
+            relaxation_step_inner_winding.exec();
+            ite_p += 1;
+            if (ite_p % 200 == 0)
+            {
+                std::cout << std::fixed << std::setprecision(9) << "Relaxation steps for the inserted body N = " << ite_p << "\n";
+                write_wall_to_vtp.writeToFile(ite_p);
+                write_rotor_to_vtp.writeToFile(ite_p);
+                write_winding_to_vtp.writeToFile(ite_p);
+            }
+        }
+        std::cout << "The physics relaxation process of inserted body finish !" << std::endl;
+        /** Output results. */
+        write_wall_particle_reload_files.writeToFile(0);
+        write_rotor_particle_reload_files.writeToFile(0);
+        write_winding_particle_reload_files.writeToFile(0);
+        return 0;
+    }
     //----------------------------------------------------------------------
     //	Define body relation map.
     //	The contact map gives the topological connections between the bodies.
@@ -308,7 +384,6 @@ int main(int ac, char *av[])
     //----------------------------------------------------------------------
     //	File output and regression check.
     //----------------------------------------------------------------------
-    IOEnvironment io_environment(sph_system);
     BodyStatesRecordingToVtp body_states_recording(sph_system);
     body_states_recording.addToWrite<int>(oil_body, "Indicator");
     body_states_recording.addToWrite<Real>(oil_body, "Phi");
@@ -360,7 +435,7 @@ int main(int ac, char *av[])
     //----------------------------------------------------------------------
     size_t number_of_iterations = sph_system.RestartStep();
     int screen_output_interval = 100;
-    Real end_time = 10.0;
+    Real end_time = 20.0;
     Real output_interval = 0.05;
     Real dt = 0.0; /**< Default acoustic time step sizes. */
     /** statistics for computing CPU time. */
