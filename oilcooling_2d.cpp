@@ -2,7 +2,7 @@
  * @file 	oilcooling_2d.cpp
  * @brief 	2D example to show the filling process of oil cooling system in a running electric motor.
  * @details This is the feasibility verification for the 3D model based on the experimental study of the team
- * 			of Tanguy Davin.Coding ist based on the programm filling_tank.cpp of Professor Xiangyu Hu at TUM.
+ * 			of Tanguy Davin.Coding is based on the programm filling_tank.cpp of Professor Xiangyu Hu at TUM.
  * @author 	Lirong Zhuang
  */
 #include "sphinxsys.h"
@@ -48,7 +48,7 @@ StdVec<Vecd> observation_location = {Vecd(0, 0)};
 StdVec<Vecd> observation_location_slot = {Vecd(0, WD)};
 StdVec<Vecd> observation_location_tooth = {Vecd((-(0.5 * WL)), WD)};
 StdVec<Vecd> observation_location_yoke = {Vecd((-(0.25 * WL)), WD + 0.5 * WH)};
-Real rho0_f = 830;     /**< Reference density of fluid. */
+Real rho0_f = 812;     /**< Reference density of fluid. */
 Real gravity_g = 9.81; /**< Gravity force of fluid. */
 // dynamics informations of oil
 Real flow_rate = 110;                                                     /**< Oil flow rate [L / h] */
@@ -59,12 +59,13 @@ Real c_f = 10.0 * U_f;                                                    /**< R
 Real rotor_rotation_velocity = 900;                    /**<Angular velocity rpm. */
 Real Omega = -(rotor_rotation_velocity * 2 * Pi / 60); /**<Angle of rotor. */
 // thermal parameters
-Real mu_f = 0.0249;                                             /**< Dynamics viscosity [Pa * s]. */
-Real phi_winding = 90.0;                                        /**< Temperature of winding at begin. */
-Real phi_fluid_initial = 50.0;                                  /**< Temperature of oil at begin. */
-Real k_oil = 8.03e-8;                                           /**< Diffusion coefficient of oil 2.0e-7. */
+Real mu_f = 0.00975;                                             /**< Dynamics viscosity [Pa * s]. */
+Real phi_winding = 110.0;                                        /**< Temperature of winding at begin. */
+Real phi_fluid_initial = 75.0;                                  /**< Temperature of oil at begin. */
+Real k_oil = 7.62e-8;                                           /**< Diffusion coefficient of oil 2.0e-7. */
 Real k_winding = 1.14e-4;                                       /**< Diffusion coefficient of winding 1.1e-6. */
 Real k_contact = (2 * k_oil * k_winding) / (k_oil + k_winding); /**< Thermal conductivity between winding and oil. */
+Real dq = 1.0;                                                 /**< Heating efficient of internal heat source [°C/s]. */
 //----------------------------------------------------------------------
 //	Geometrie of the othor 4 inlets.
 //----------------------------------------------------------------------
@@ -174,6 +175,23 @@ class ThermoWindingInitialCondition : public LocalDynamics, public DataDelegateS
     StdLargeVec<Real> &phi_;
 };
 //----------------------------------------------------------------------
+//	The windings heat up due to the internal heat sources.
+//----------------------------------------------------------------------
+class ThermoWindingHeatSource : public LocalDynamics, public DataDelegateSimple
+{
+  public:
+    explicit ThermoWindingHeatSource(SPHBody &sph_body)
+        : LocalDynamics(sph_body), DataDelegateSimple(sph_body),
+          phi_(*particles_->registerSharedVariable<Real>("Phi")){};
+    void update(size_t index_i, Real dt)
+    {
+        phi_[index_i] += dq * dt;
+    }
+
+  protected:
+    StdLargeVec<Real> &phi_;
+};
+//----------------------------------------------------------------------
 //	Application dependent fluid body initial condition
 //----------------------------------------------------------------------
 class ThermofluidBodyInitialCondition : public LocalDynamics, public DataDelegateSimple
@@ -203,7 +221,7 @@ int main(int ac, char *av[])
 {
     /** Build up a SPHSystem */
     SPHSystem sph_system(system_domain_bounds, resolution_ref);
-    sph_system.setRunParticleRelaxation(true); // Tag for run particle relaxation for body-fitted distribution
+    sph_system.setRunParticleRelaxation(false); // Tag for run particle relaxation for body-fitted distribution
     sph_system.setReloadParticles(true);        // Tag for computation with save particles distribution
     sph_system.handleCommandlineOptions(ac, av);
     IOEnvironment io_environment(sph_system);
@@ -381,6 +399,7 @@ int main(int ac, char *av[])
         ConstructorArgs(winding_contact, &conductivity_oil_winding));
     SimpleDynamics<ThermoWindingInitialCondition> thermowinding_condition(winding);
     SimpleDynamics<ThermofluidBodyInitialCondition> thermofluid_initial_condition(oil_body);
+    SimpleDynamics<ThermoWindingHeatSource> heat_source(winding);
     //----------------------------------------------------------------------
     //	File output and regression check.
     //----------------------------------------------------------------------
@@ -435,7 +454,7 @@ int main(int ac, char *av[])
     //----------------------------------------------------------------------
     size_t number_of_iterations = sph_system.RestartStep();
     int screen_output_interval = 100;
-    Real end_time = 20.0;
+    Real end_time = 10.0;
     Real output_interval = 0.05;
     Real dt = 0.0; /**< Default acoustic time step sizes. */
     /** statistics for computing CPU time. */
@@ -479,6 +498,7 @@ int main(int ac, char *av[])
                 inflow_condition4.exec();
                 inflow_condition5.exec();
                 thermal_relaxation_complex_oil.exec(dt);
+                heat_source.exec(dt);    /** Implement of heat recources. */
                 thermal_relaxation_complex_winding.exec(dt);
                 dt = get_fluid_time_step_size.exec();
                 relaxation_time += dt;
@@ -488,9 +508,20 @@ int main(int ac, char *av[])
 
             if (number_of_iterations % screen_output_interval == 0)
             {
-                std::cout << std::fixed << std::setprecision(9) << "N=" << number_of_iterations << "	Time = "
-                          << GlobalStaticVariables::physical_time_
-                          << "	Dt = " << Dt << "	dt = " << dt << "\n";
+                TickCount current_time = TickCount::now();
+                TimeInterval elapsed_time = current_time - t1 - interval;
+                Real remaining_physical_time = end_time - GlobalStaticVariables::physical_time_;
+                Real estimated_remaining_real_time = elapsed_time.seconds() *
+                                                     (remaining_physical_time / GlobalStaticVariables::physical_time_);
+                int hours = static_cast<int>(estimated_remaining_real_time) / 3600;
+                int minutes = (static_cast<int>(estimated_remaining_real_time) % 3600) / 60;
+                int seconds = static_cast<int>(estimated_remaining_real_time) % 60;
+                std::cout << std::fixed << std::setprecision(9)
+                          << "N=" << number_of_iterations
+                          << " Time = " << GlobalStaticVariables::physical_time_
+                          << " Dt = " << Dt << " dt = " << dt
+                          << " Remaining: " << hours << " h "
+                          << minutes << " min " << seconds << " s\n";
             }
             number_of_iterations++;
 
