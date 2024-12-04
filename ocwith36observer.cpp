@@ -45,67 +45,67 @@ BoundingBox system_domain_bounds(Vec2d(-BW - RM, -BW - RM), Vec2d(RM + BW, RM + 
 Vecd center(0.0, 0.0);
 // observer location
 StdVec<Vecd> observation_location = {Vecd(0, 0)};
-StdVec<Vecd> slot_location1 = {Vecd(WD, 0)};
-StdVec<Vecd> slot_location2 = {Vecd(WD * cos(angle_increment), WD *sin(angle_increment))};
-StdVec<Vecd> slot_location3 = {Vecd(WD * cos(2 * angle_increment), WD *sin(2 * angle_increment))};
-StdVec<Vecd> slot_location4 = {Vecd(WD * cos(3 * angle_increment), WD *sin(3 * angle_increment))};
-StdVec<Vecd> slot_location5 = {Vecd(WD * cos(4 * angle_increment), WD *sin(4 * angle_increment))};
-StdVec<Vecd> slot_location6 = {Vecd(WD * cos(5 * angle_increment), WD *sin(5 * angle_increment))};
-StdVec<Vecd> slot_location7 = {Vecd(WD * cos(6 * angle_increment), WD *sin(6 * angle_increment))};
-StdVec<Vecd> slot_location8 = {Vecd(WD * cos(7 * angle_increment), WD *sin(7 * angle_increment))};
-StdVec<Vecd> slot_location9 = {Vecd(WD * cos(8 * angle_increment), WD *sin(8 * angle_increment))};
-StdVec<Vecd> slot_location10 = {Vecd(WD * cos(9 * angle_increment), WD *sin(9 * angle_increment))};
-StdVec<Vecd> slot_location11 = {Vecd(WD * cos(10 * angle_increment), WD *sin(10 * angle_increment))};
-StdVec<Vecd> slot_location12 = {Vecd(WD * cos(11 * angle_increment), WD *sin(11 * angle_increment))};
-
-StdVec<Vecd> tooth_location1 = {Vecd(WD, 0.5 * WL)};
-StdVec<Vecd> tooth_location2 = {Vecd(WD * cos(angle_increment) - 0.5 * WL * sin(angle_increment),
-                                     WD *sin(angle_increment) + 0.5 * WL * cos(angle_increment))};
-StdVec<Vecd> tooth_location3 = {Vecd(WD * cos(2 * angle_increment) - 0.5 * WL * sin(2 * angle_increment),
-                                     WD *sin(2 * angle_increment) + 0.5 * WL * cos(2 * angle_increment))};
-StdVec<Vecd> tooth_location4 = {Vecd(WD * cos(3 * angle_increment) - 0.5 * WL * sin(3 * angle_increment),
-                                     WD *sin(3 * angle_increment) + 0.5 * WL * cos(3 * angle_increment))};
-StdVec<Vecd> tooth_location5 = {Vecd(WD * cos(4 * angle_increment) - 0.5 * WL * sin(4 * angle_increment),
-                                     WD *sin(4 * angle_increment) + 0.5 * WL * cos(4 * angle_increment))};
-StdVec<Vecd> tooth_location6 = {Vecd(WD * cos(5 * angle_increment) - 0.5 * WL * sin(5 * angle_increment),
-                                     WD *sin(5 * angle_increment) + 0.5 * WL * cos(5 * angle_increment))};
-StdVec<Vecd> tooth_location7 = {Vecd(WD * cos(6 * angle_increment) - 0.5 * WL * sin(6 * angle_increment),
-                                     WD *sin(6 * angle_increment) + 0.5 * WL * cos(6 * angle_increment))};
-StdVec<Vecd> tooth_location8 = {Vecd(WD * cos(7 * angle_increment) - 0.5 * WL * sin(7 * angle_increment),
-                                     WD *sin(7 * angle_increment) + 0.5 * WL * cos(7 * angle_increment))};
-StdVec<Vecd> tooth_location9 = {Vecd(WD * cos(8 * angle_increment) - 0.5 * WL * sin(8 * angle_increment),
-                                     WD *sin(8 * angle_increment) + 0.5 * WL * cos(8 * angle_increment))};
-StdVec<Vecd> tooth_location10 = {Vecd(WD * cos(9 * angle_increment) - 0.5 * WL * sin(9 * angle_increment),
-                                      WD *sin(9 * angle_increment) + 0.5 * WL * cos(9 * angle_increment))};
-StdVec<Vecd> tooth_location11 = {Vecd(WD * cos(10 * angle_increment) - 0.5 * WL * sin(10 * angle_increment),
-                                      WD *sin(10 * angle_increment) + 0.5 * WL * cos(10 * angle_increment))};
-StdVec<Vecd> tooth_location12 = {Vecd(WD * cos(11 * angle_increment) - 0.5 * WL * sin(11 * angle_increment),
-                                      WD *sin(11 * angle_increment) + 0.5 * WL * cos(11 * angle_increment))};
-
-StdVec<Vecd> yoke_location1 = {Vecd(WD + 0.5 * WH, 0.25 * WL)};
-StdVec<Vecd> yoke_location2 = {Vecd(WD * cos(angle_increment) + 0.5 * WH * cos(angle_increment) - 0.25 * WL * sin(angle_increment),
-                                    WD *sin(angle_increment) + 0.5 * WH * sin(angle_increment) + 0.25 * WL * cos(angle_increment))};
-StdVec<Vecd> yoke_location3 = {Vecd(WD * cos(2 * angle_increment) + 0.5 * WH * cos(2 * angle_increment) - 0.25 * WL * sin(2 * angle_increment),
-                                    WD *sin(2 * angle_increment) + 0.5 * WH * sin(2 * angle_increment) + 0.25 * WL * cos(2 * angle_increment))};
-StdVec<Vecd> yoke_location4 = {Vecd(WD * cos(3 * angle_increment) + 0.5 * WH * cos(3 * angle_increment) - 0.25 * WL * sin(3 * angle_increment),
-                                    WD *sin(3 * angle_increment) + 0.5 * WH * sin(3 * angle_increment) + 0.25 * WL * cos(3 * angle_increment))};
-StdVec<Vecd> yoke_location5 = {Vecd(WD * cos(4 * angle_increment) + 0.5 * WH * cos(4 * angle_increment) - 0.25 * WL * sin(4 * angle_increment),
-                                    WD *sin(4 * angle_increment) + 0.5 * WH * sin(4 * angle_increment) + 0.25 * WL * cos(4 * angle_increment))};
-StdVec<Vecd> yoke_location6 = {Vecd(WD * cos(5 * angle_increment) + 0.5 * WH * cos(5 * angle_increment) - 0.25 * WL * sin(5 * angle_increment),
-                                    WD *sin(5 * angle_increment) + 0.5 * WH * sin(5 * angle_increment) + 0.25 * WL * cos(5 * angle_increment))};
-StdVec<Vecd> yoke_location7 = {Vecd(WD * cos(6 * angle_increment) + 0.5 * WH * cos(6 * angle_increment) - 0.25 * WL * sin(6 * angle_increment),
-                                    WD *sin(6 * angle_increment) + 0.5 * WH * sin(6 * angle_increment) + 0.25 * WL * cos(6 * angle_increment))};
-StdVec<Vecd> yoke_location8 = {Vecd(WD * cos(7 * angle_increment) + 0.5 * WH * cos(7 * angle_increment) - 0.25 * WL * sin(7 * angle_increment),
-                                    WD *sin(7 * angle_increment) + 0.5 * WH * sin(7 * angle_increment) + 0.25 * WL * cos(7 * angle_increment))};
-StdVec<Vecd> yoke_location9 = {Vecd(WD * cos(8 * angle_increment) + 0.5 * WH * cos(8 * angle_increment) - 0.25 * WL * sin(8 * angle_increment),
-                                    WD *sin(8 * angle_increment) + 0.5 * WH * sin(8 * angle_increment) + 0.25 * WL * cos(8 * angle_increment))};
-StdVec<Vecd> yoke_location10 = {Vecd(WD * cos(9 * angle_increment) + 0.5 * WH * cos(9 * angle_increment) - 0.25 * WL * sin(9 * angle_increment),
-                                     WD *sin(9 * angle_increment) + 0.5 * WH * sin(9 * angle_increment) + 0.25 * WL * cos(9 * angle_increment))};
-StdVec<Vecd> yoke_location11 = {Vecd(WD * cos(10 * angle_increment) + 0.5 * WH * cos(10 * angle_increment) - 0.25 * WL * sin(10 * angle_increment),
-                                     WD *sin(10 * angle_increment) + 0.5 * WH * sin(10 * angle_increment) + 0.25 * WL * cos(10 * angle_increment))};
-StdVec<Vecd> yoke_location12 = {Vecd(WD * cos(11 * angle_increment) + 0.5 * WH * cos(11 * angle_increment) - 0.25 * WL * sin(11 * angle_increment),
-                                     WD *sin(11 * angle_increment) + 0.5 * WH * sin(11 * angle_increment) + 0.25 * WL * cos(11 * angle_increment))};
-
+StdVec<Vecd> slot_locations = {
+    Vecd(WD, 0),
+    Vecd(WD *cos(angle_increment), WD *sin(angle_increment)),
+    Vecd(WD *cos(2 * angle_increment), WD *sin(2 * angle_increment)),
+    Vecd(WD *cos(3 * angle_increment), WD *sin(3 * angle_increment)),
+    Vecd(WD *cos(4 * angle_increment), WD *sin(4 * angle_increment)),
+    Vecd(WD *cos(5 * angle_increment), WD *sin(5 * angle_increment)),
+    Vecd(WD *cos(6 * angle_increment), WD *sin(6 * angle_increment)),
+    Vecd(WD *cos(7 * angle_increment), WD *sin(7 * angle_increment)),
+    Vecd(WD *cos(8 * angle_increment), WD *sin(8 * angle_increment)),
+    Vecd(WD *cos(9 * angle_increment), WD *sin(9 * angle_increment)),
+    Vecd(WD *cos(10 * angle_increment), WD *sin(10 * angle_increment)),
+    Vecd(WD *cos(11 * angle_increment), WD *sin(11 * angle_increment))};
+StdVec<Vecd> tooth_locations = {
+    Vecd(WD, 0.5 * WL),
+    Vecd(WD *cos(angle_increment) - 0.5 * WL * sin(angle_increment),
+         WD *sin(angle_increment) + 0.5 * WL * cos(angle_increment)),
+    Vecd(WD *cos(2 * angle_increment) - 0.5 * WL * sin(2 * angle_increment),
+         WD *sin(2 * angle_increment) + 0.5 * WL * cos(2 * angle_increment)),
+    Vecd(WD *cos(3 * angle_increment) - 0.5 * WL * sin(3 * angle_increment),
+         WD *sin(3 * angle_increment) + 0.5 * WL * cos(3 * angle_increment)),
+    Vecd(WD *cos(4 * angle_increment) - 0.5 * WL * sin(4 * angle_increment),
+         WD *sin(4 * angle_increment) + 0.5 * WL * cos(4 * angle_increment)),
+    Vecd(WD *cos(5 * angle_increment) - 0.5 * WL * sin(5 * angle_increment),
+         WD *sin(5 * angle_increment) + 0.5 * WL * cos(5 * angle_increment)),
+    Vecd(WD *cos(6 * angle_increment) - 0.5 * WL * sin(6 * angle_increment),
+         WD *sin(6 * angle_increment) + 0.5 * WL * cos(6 * angle_increment)),
+    Vecd(WD *cos(7 * angle_increment) - 0.5 * WL * sin(7 * angle_increment),
+         WD *sin(7 * angle_increment) + 0.5 * WL * cos(7 * angle_increment)),
+    Vecd(WD *cos(8 * angle_increment) - 0.5 * WL * sin(8 * angle_increment),
+         WD *sin(8 * angle_increment) + 0.5 * WL * cos(8 * angle_increment)),
+    Vecd(WD *cos(9 * angle_increment) - 0.5 * WL * sin(9 * angle_increment),
+         WD *sin(9 * angle_increment) + 0.5 * WL * cos(9 * angle_increment)),
+    Vecd(WD *cos(10 * angle_increment) - 0.5 * WL * sin(10 * angle_increment),
+         WD *sin(10 * angle_increment) + 0.5 * WL * cos(10 * angle_increment)),
+    Vecd(WD *cos(11 * angle_increment) - 0.5 * WL * sin(11 * angle_increment),
+         WD *sin(11 * angle_increment) + 0.5 * WL * cos(11 * angle_increment))};
+StdVec<Vecd> yoke_locations = {
+    Vecd(WD + 0.5 * WH, 0.25 * WL),
+    Vecd(WD *cos(angle_increment) + 0.5 * WH * cos(angle_increment) - 0.25 * WL * sin(angle_increment),
+         WD *sin(angle_increment) + 0.5 * WH * sin(angle_increment) + 0.25 * WL * cos(angle_increment)),
+    Vecd(WD *cos(2 * angle_increment) + 0.5 * WH * cos(2 * angle_increment) - 0.25 * WL * sin(2 * angle_increment),
+         WD *sin(2 * angle_increment) + 0.5 * WH * sin(2 * angle_increment) + 0.25 * WL * cos(2 * angle_increment)),
+    Vecd(WD *cos(3 * angle_increment) + 0.5 * WH * cos(3 * angle_increment) - 0.25 * WL * sin(3 * angle_increment),
+         WD *sin(3 * angle_increment) + 0.5 * WH * sin(3 * angle_increment) + 0.25 * WL * cos(3 * angle_increment)),
+    Vecd(WD *cos(4 * angle_increment) + 0.5 * WH * cos(4 * angle_increment) - 0.25 * WL * sin(4 * angle_increment),
+         WD *sin(4 * angle_increment) + 0.5 * WH * sin(4 * angle_increment) + 0.25 * WL * cos(4 * angle_increment)),
+    Vecd(WD *cos(5 * angle_increment) + 0.5 * WH * cos(5 * angle_increment) - 0.25 * WL * sin(5 * angle_increment),
+         WD *sin(5 * angle_increment) + 0.5 * WH * sin(5 * angle_increment) + 0.25 * WL * cos(5 * angle_increment)),
+    Vecd(WD *cos(6 * angle_increment) + 0.5 * WH * cos(6 * angle_increment) - 0.25 * WL * sin(6 * angle_increment),
+         WD *sin(6 * angle_increment) + 0.5 * WH * sin(6 * angle_increment) + 0.25 * WL * cos(6 * angle_increment)),
+    Vecd(WD *cos(7 * angle_increment) + 0.5 * WH * cos(7 * angle_increment) - 0.25 * WL * sin(7 * angle_increment),
+         WD *sin(7 * angle_increment) + 0.5 * WH * sin(7 * angle_increment) + 0.25 * WL * cos(7 * angle_increment)),
+    Vecd(WD *cos(8 * angle_increment) + 0.5 * WH * cos(8 * angle_increment) - 0.25 * WL * sin(8 * angle_increment),
+         WD *sin(8 * angle_increment) + 0.5 * WH * sin(8 * angle_increment) + 0.25 * WL * cos(8 * angle_increment)),
+    Vecd(WD *cos(9 * angle_increment) + 0.5 * WH * cos(9 * angle_increment) - 0.25 * WL * sin(9 * angle_increment),
+         WD *sin(9 * angle_increment) + 0.5 * WH * sin(9 * angle_increment) + 0.25 * WL * cos(9 * angle_increment)),
+    Vecd(WD *cos(10 * angle_increment) + 0.5 * WH * cos(10 * angle_increment) - 0.25 * WL * sin(10 * angle_increment),
+         WD *sin(10 * angle_increment) + 0.5 * WH * sin(10 * angle_increment) + 0.25 * WL * cos(10 * angle_increment)),
+    Vecd(WD *cos(11 * angle_increment) + 0.5 * WH * cos(11 * angle_increment) - 0.25 * WL * sin(11 * angle_increment),
+         WD *sin(11 * angle_increment) + 0.5 * WH * sin(11 * angle_increment) + 0.25 * WL * cos(11 * angle_increment))};
 Real rho0_f = 812;     /**< Reference density of fluid. */
 Real gravity_g = 9.81; /**< Gravity force of fluid. */
 // dynamics informations of oil
@@ -117,13 +117,13 @@ Real c_f = 10.0 * U_f;                                                    /**< R
 Real rotor_rotation_velocity = 900;                    /**<Angular velocity rpm. */
 Real Omega = -(rotor_rotation_velocity * 2 * Pi / 60); /**<Angle of rotor. */
 // thermal parameters
-Real mu_f = 0.00975;                                             /**< Dynamics viscosity [Pa * s]. */
-Real phi_winding = 110.0;                                        /**< Temperature of winding at begin. */
+Real mu_f = 0.00975;                                            /**< Dynamics viscosity [Pa * s]. */
+Real phi_winding = 110.0;                                       /**< Temperature of winding at begin. */
 Real phi_fluid_initial = 75.0;                                  /**< Temperature of oil at begin. */
 Real k_oil = 7.62e-8;                                           /**< Diffusion coefficient of oil 2.0e-7. */
 Real k_winding = 1.14e-4;                                       /**< Diffusion coefficient of winding 1.1e-6. */
 Real k_contact = (2 * k_oil * k_winding) / (k_oil + k_winding); /**< Thermal conductivity between winding and oil. */
-Real dq = 0.0;                                                 /**< Heating efficient of internal heat source [°C/s]. */
+Real dq = 0.0;                                                  /**< Heating efficient of internal heat source [°C/s]. */
 //----------------------------------------------------------------------
 //	Geometrie of the othor 4 inlets.
 //----------------------------------------------------------------------
@@ -317,91 +317,12 @@ int main(int ac, char *av[])
 
     ObserverBody fluid_observer(sph_system, "FluidObserver");
     fluid_observer.generateParticles<ObserverParticles>(observation_location);
-
-    ObserverBody slot_observer1(sph_system, "ObserverSlot1");
-    slot_observer1.generateParticles<ObserverParticles>(slot_location1);
-    ObserverBody tooth_observer1(sph_system, "ObserverTooth1");
-    tooth_observer1.generateParticles<ObserverParticles>(tooth_location1);
-    ObserverBody yoke_observer1(sph_system, "ObserverYoke1");
-    yoke_observer1.generateParticles<ObserverParticles>(yoke_location1);
-
-    ObserverBody slot_observer2(sph_system, "ObserverSlot2");
-    slot_observer2.generateParticles<ObserverParticles>(slot_location2);
-    ObserverBody tooth_observer2(sph_system, "ObserverTooth2");
-    tooth_observer2.generateParticles<ObserverParticles>(tooth_location2);
-    ObserverBody yoke_observer2(sph_system, "ObserverYoke2");
-    yoke_observer2.generateParticles<ObserverParticles>(yoke_location2);
-
-    ObserverBody slot_observer3(sph_system, "ObserverSlot3");
-    slot_observer3.generateParticles<ObserverParticles>(slot_location3);
-    ObserverBody tooth_observer3(sph_system, "ObserverTooth3");
-    tooth_observer3.generateParticles<ObserverParticles>(tooth_location3);
-    ObserverBody yoke_observer3(sph_system, "ObserverYoke3");
-    yoke_observer3.generateParticles<ObserverParticles>(yoke_location3);
-
-    ObserverBody slot_observer4(sph_system, "ObserverSlot4");
-    slot_observer4.generateParticles<ObserverParticles>(slot_location4);
-    ObserverBody tooth_observer4(sph_system, "ObserverTooth4");
-    tooth_observer4.generateParticles<ObserverParticles>(tooth_location4);
-    ObserverBody yoke_observer4(sph_system, "ObserverYoke4");
-    yoke_observer4.generateParticles<ObserverParticles>(yoke_location4);
-
-    ObserverBody slot_observer5(sph_system, "ObserverSlot5");
-    slot_observer5.generateParticles<ObserverParticles>(slot_location5);
-    ObserverBody tooth_observer5(sph_system, "ObserverTooth5");
-    tooth_observer5.generateParticles<ObserverParticles>(tooth_location5);
-    ObserverBody yoke_observer5(sph_system, "ObserverYoke5");
-    yoke_observer5.generateParticles<ObserverParticles>(yoke_location5);
-
-    ObserverBody slot_observer6(sph_system, "ObserverSlot6");
-    slot_observer6.generateParticles<ObserverParticles>(slot_location6);
-    ObserverBody tooth_observer6(sph_system, "ObserverTooth6");
-    tooth_observer6.generateParticles<ObserverParticles>(tooth_location6);
-    ObserverBody yoke_observer6(sph_system, "ObserverYoke6");
-    yoke_observer6.generateParticles<ObserverParticles>(yoke_location6);
-
-    ObserverBody slot_observer7(sph_system, "ObserverSlot7");
-    slot_observer7.generateParticles<ObserverParticles>(slot_location7);
-    ObserverBody tooth_observer7(sph_system, "ObserverTooth7");
-    tooth_observer7.generateParticles<ObserverParticles>(tooth_location7);
-    ObserverBody yoke_observer7(sph_system, "ObserverYoke7");
-    yoke_observer7.generateParticles<ObserverParticles>(yoke_location7);
-
-    ObserverBody slot_observer8(sph_system, "ObserverSlot8");
-    slot_observer8.generateParticles<ObserverParticles>(slot_location8);
-    ObserverBody tooth_observer8(sph_system, "ObserverTooth8");
-    tooth_observer8.generateParticles<ObserverParticles>(tooth_location8);
-    ObserverBody yoke_observer8(sph_system, "ObserverYoke8");
-    yoke_observer8.generateParticles<ObserverParticles>(yoke_location8);
-
-    ObserverBody slot_observer9(sph_system, "ObserverSlot9");
-    slot_observer9.generateParticles<ObserverParticles>(slot_location9);
-    ObserverBody tooth_observer9(sph_system, "ObserverTooth9");
-    tooth_observer9.generateParticles<ObserverParticles>(tooth_location9);
-    ObserverBody yoke_observer9(sph_system, "ObserverYoke9");
-    yoke_observer9.generateParticles<ObserverParticles>(yoke_location9);
-
-    ObserverBody slot_observer10(sph_system, "ObserverSlot10");
-    slot_observer10.generateParticles<ObserverParticles>(slot_location10);
-    ObserverBody tooth_observer10(sph_system, "ObserverTooth10");
-    tooth_observer10.generateParticles<ObserverParticles>(tooth_location10);
-    ObserverBody yoke_observer10(sph_system, "ObserverYoke10");
-    yoke_observer10.generateParticles<ObserverParticles>(yoke_location10);
-
-    ObserverBody slot_observer11(sph_system, "ObserverSlot11");
-    slot_observer11.generateParticles<ObserverParticles>(slot_location11);
-    ObserverBody tooth_observer11(sph_system, "ObserverTooth11");
-    tooth_observer11.generateParticles<ObserverParticles>(tooth_location11);
-    ObserverBody yoke_observer11(sph_system, "ObserverYoke11");
-    yoke_observer11.generateParticles<ObserverParticles>(yoke_location11);
-
-    ObserverBody slot_observer12(sph_system, "ObserverSlot12");
-    slot_observer12.generateParticles<ObserverParticles>(slot_location12);
-    ObserverBody tooth_observer12(sph_system, "ObserverTooth12");
-    tooth_observer12.generateParticles<ObserverParticles>(tooth_location12);
-    ObserverBody yoke_observer12(sph_system, "ObserverYoke12");
-    yoke_observer12.generateParticles<ObserverParticles>(yoke_location12);
-
+    ObserverBody slot_observer(sph_system, "ObserverSlot");
+    slot_observer.generateParticles<ObserverParticles>(slot_locations);
+    ObserverBody tooth_observer(sph_system, "ObserverTooth");
+    tooth_observer.generateParticles<ObserverParticles>(tooth_locations);
+    ObserverBody yoke_observer(sph_system, "ObserverYoke");
+    yoke_observer.generateParticles<ObserverParticles>(yoke_locations);
     //----------------------------------------------------------------------
     //	Run particle relaxation for body-fitted distribution if chosen.
     //----------------------------------------------------------------------
@@ -480,43 +401,9 @@ int main(int ac, char *av[])
     ContactRelation oil_contact(oil_body, {&winding});
     ContactRelation winding_contact(winding, {&oil_body});
     ContactRelation fluid_observer_contact(fluid_observer, {&oil_body});
-
-    ContactRelation winding_slot_contact1(slot_observer1, {&winding});
-    ContactRelation winding_tooth_contact1(tooth_observer1, {&winding});
-    ContactRelation winding_yoke_contact1(yoke_observer1, {&winding});
-    ContactRelation winding_slot_contact2(slot_observer2, {&winding});
-    ContactRelation winding_tooth_contact2(tooth_observer2, {&winding});
-    ContactRelation winding_yoke_contact2(yoke_observer2, {&winding});
-    ContactRelation winding_slot_contact3(slot_observer3, {&winding});
-    ContactRelation winding_tooth_contact3(tooth_observer3, {&winding});
-    ContactRelation winding_yoke_contact3(yoke_observer3, {&winding});
-    ContactRelation winding_slot_contact4(slot_observer4, {&winding});
-    ContactRelation winding_tooth_contact4(tooth_observer4, {&winding});
-    ContactRelation winding_yoke_contact4(yoke_observer4, {&winding});
-    ContactRelation winding_slot_contact5(slot_observer5, {&winding});
-    ContactRelation winding_tooth_contact5(tooth_observer5, {&winding});
-    ContactRelation winding_yoke_contact5(yoke_observer5, {&winding});
-    ContactRelation winding_slot_contact6(slot_observer6, {&winding});
-    ContactRelation winding_tooth_contact6(tooth_observer6, {&winding});
-    ContactRelation winding_yoke_contact6(yoke_observer6, {&winding});
-    ContactRelation winding_slot_contact7(slot_observer7, {&winding});
-    ContactRelation winding_tooth_contact7(tooth_observer7, {&winding});
-    ContactRelation winding_yoke_contact7(yoke_observer7, {&winding});
-    ContactRelation winding_slot_contact8(slot_observer8, {&winding});
-    ContactRelation winding_tooth_contact8(tooth_observer8, {&winding});
-    ContactRelation winding_yoke_contact8(yoke_observer8, {&winding});
-    ContactRelation winding_slot_contact9(slot_observer9, {&winding});
-    ContactRelation winding_tooth_contact9(tooth_observer9, {&winding});
-    ContactRelation winding_yoke_contact9(yoke_observer9, {&winding});
-    ContactRelation winding_slot_contact10(slot_observer10, {&winding});
-    ContactRelation winding_tooth_contact10(tooth_observer10, {&winding});
-    ContactRelation winding_yoke_contact10(yoke_observer10, {&winding});
-    ContactRelation winding_slot_contact11(slot_observer11, {&winding});
-    ContactRelation winding_tooth_contact11(tooth_observer11, {&winding});
-    ContactRelation winding_yoke_contact11(yoke_observer11, {&winding});
-    ContactRelation winding_slot_contact12(slot_observer12, {&winding});
-    ContactRelation winding_tooth_contact12(tooth_observer12, {&winding});
-    ContactRelation winding_yoke_contact12(yoke_observer12, {&winding});
+    ContactRelation winding_slot_contact(slot_observer, {&winding});
+    ContactRelation winding_tooth_contact(tooth_observer, {&winding});
+    ContactRelation winding_yoke_contact(yoke_observer, {&winding});
     //----------------------------------------------------------------------
     // Combined relations built from basic relations
     //----------------------------------------------------------------------
@@ -581,56 +468,9 @@ int main(int ac, char *av[])
     RegressionTestDynamicTimeWarping<ReducedQuantityRecording<TotalMechanicalEnergy>> write_water_mechanical_energy(oil_body, gravity);
     RegressionTestDynamicTimeWarping<ObservedQuantityRecording<Real>> write_recorded_water_pressure("Pressure", fluid_observer_contact);
     RegressionTestEnsembleAverage<ObservedQuantityRecording<Real>> write_fluid_phi("Phi", fluid_observer_contact);
-
-    RegressionTestEnsembleAverage<ObservedQuantityRecording<Real>> write_slot_phi1("Phi", winding_slot_contact1);
-    RegressionTestEnsembleAverage<ObservedQuantityRecording<Real>> write_tooth_phi1("Phi", winding_tooth_contact1);
-    RegressionTestEnsembleAverage<ObservedQuantityRecording<Real>> write_yoke_phi1("Phi", winding_yoke_contact1);
-
-    RegressionTestEnsembleAverage<ObservedQuantityRecording<Real>> write_slot_phi2("Phi", winding_slot_contact2);
-    RegressionTestEnsembleAverage<ObservedQuantityRecording<Real>> write_tooth_phi2("Phi", winding_tooth_contact2);
-    RegressionTestEnsembleAverage<ObservedQuantityRecording<Real>> write_yoke_phi2("Phi", winding_yoke_contact2);
-
-    RegressionTestEnsembleAverage<ObservedQuantityRecording<Real>> write_slot_phi3("Phi", winding_slot_contact3);
-    RegressionTestEnsembleAverage<ObservedQuantityRecording<Real>> write_tooth_phi3("Phi", winding_tooth_contact3);
-    RegressionTestEnsembleAverage<ObservedQuantityRecording<Real>> write_yoke_phi3("Phi", winding_yoke_contact3);
-
-    RegressionTestEnsembleAverage<ObservedQuantityRecording<Real>> write_slot_phi4("Phi", winding_slot_contact4);
-    RegressionTestEnsembleAverage<ObservedQuantityRecording<Real>> write_tooth_phi4("Phi", winding_tooth_contact4);
-    RegressionTestEnsembleAverage<ObservedQuantityRecording<Real>> write_yoke_phi4("Phi", winding_yoke_contact4);
-
-    RegressionTestEnsembleAverage<ObservedQuantityRecording<Real>> write_slot_phi5("Phi", winding_slot_contact5);
-    RegressionTestEnsembleAverage<ObservedQuantityRecording<Real>> write_tooth_phi5("Phi", winding_tooth_contact5);
-    RegressionTestEnsembleAverage<ObservedQuantityRecording<Real>> write_yoke_phi5("Phi", winding_yoke_contact5);
-
-    RegressionTestEnsembleAverage<ObservedQuantityRecording<Real>> write_slot_phi6("Phi", winding_slot_contact6);
-    RegressionTestEnsembleAverage<ObservedQuantityRecording<Real>> write_tooth_phi6("Phi", winding_tooth_contact6);
-    RegressionTestEnsembleAverage<ObservedQuantityRecording<Real>> write_yoke_phi6("Phi", winding_yoke_contact6);
-
-    RegressionTestEnsembleAverage<ObservedQuantityRecording<Real>> write_slot_phi7("Phi", winding_slot_contact7);
-    RegressionTestEnsembleAverage<ObservedQuantityRecording<Real>> write_tooth_phi7("Phi", winding_tooth_contact7);
-    RegressionTestEnsembleAverage<ObservedQuantityRecording<Real>> write_yoke_phi7("Phi", winding_yoke_contact7);
-
-    RegressionTestEnsembleAverage<ObservedQuantityRecording<Real>> write_slot_phi8("Phi", winding_slot_contact8);
-    RegressionTestEnsembleAverage<ObservedQuantityRecording<Real>> write_tooth_phi8("Phi", winding_tooth_contact8);
-    RegressionTestEnsembleAverage<ObservedQuantityRecording<Real>> write_yoke_phi8("Phi", winding_yoke_contact8);
-
-    RegressionTestEnsembleAverage<ObservedQuantityRecording<Real>> write_slot_phi9("Phi", winding_slot_contact9);
-    RegressionTestEnsembleAverage<ObservedQuantityRecording<Real>> write_tooth_phi9("Phi", winding_tooth_contact9);
-    RegressionTestEnsembleAverage<ObservedQuantityRecording<Real>> write_yoke_phi9("Phi", winding_yoke_contact9);
-
-    RegressionTestEnsembleAverage<ObservedQuantityRecording<Real>> write_slot_phi10("Phi", winding_slot_contact10);
-    RegressionTestEnsembleAverage<ObservedQuantityRecording<Real>> write_tooth_phi10("Phi", winding_tooth_contact10);
-    RegressionTestEnsembleAverage<ObservedQuantityRecording<Real>> write_yoke_phi10("Phi", winding_yoke_contact10);
-
-    RegressionTestEnsembleAverage<ObservedQuantityRecording<Real>> write_slot_phi11("Phi", winding_slot_contact11);
-    RegressionTestEnsembleAverage<ObservedQuantityRecording<Real>> write_tooth_phi11("Phi", winding_tooth_contact11);
-    RegressionTestEnsembleAverage<ObservedQuantityRecording<Real>> write_yoke_phi11("Phi", winding_yoke_contact11);
-
-    RegressionTestEnsembleAverage<ObservedQuantityRecording<Real>> write_slot_phi12("Phi", winding_slot_contact12);
-    RegressionTestEnsembleAverage<ObservedQuantityRecording<Real>> write_tooth_phi12("Phi", winding_tooth_contact12);
-    RegressionTestEnsembleAverage<ObservedQuantityRecording<Real>> write_yoke_phi12("Phi", winding_yoke_contact12);
-
-    //----------------------------------------------------------------------
+    RegressionTestEnsembleAverage<ObservedQuantityRecording<Real>> write_slot_phi("Phi", winding_slot_contact);
+    RegressionTestEnsembleAverage<ObservedQuantityRecording<Real>> write_tooth_phi("Phi", winding_tooth_contact);
+    RegressionTestEnsembleAverage<ObservedQuantityRecording<Real>> write_yoke_phi("Phi", winding_yoke_contact);
     //	Building of multibody for rotor rotation.
     //----------------------------------------------------------------------
     SimTK::MultibodySystem MBsystem;
@@ -715,7 +555,7 @@ int main(int ac, char *av[])
                 inflow_condition4.exec();
                 inflow_condition5.exec();
                 thermal_relaxation_complex_oil.exec(dt);
-                heat_source.exec(dt);    /** Implement of heat recources. */
+                heat_source.exec(dt); /** Implement of heat recources. */
                 thermal_relaxation_complex_winding.exec(dt);
                 dt = get_fluid_time_step_size.exec();
                 relaxation_time += dt;
@@ -751,61 +591,14 @@ int main(int ac, char *av[])
             /** outflow delete*/
             outlet_disposer_outflow_deletion.exec();
             /** Update cell linked list and configuration. */
-
             oil_body.updateCellLinkedListWithParticleSort(100);
             oil_body_complex.updateConfiguration();
             oil_thermo_complex.updateConfiguration();
             winding_thermo_complex.updateConfiguration();
             fluid_observer_contact.updateConfiguration();
-
-            winding_slot_contact1.updateConfiguration();
-            winding_tooth_contact1.updateConfiguration();
-            winding_yoke_contact1.updateConfiguration();
-
-            winding_slot_contact2.updateConfiguration();
-            winding_tooth_contact2.updateConfiguration();
-            winding_yoke_contact2.updateConfiguration();
-
-            winding_slot_contact3.updateConfiguration();
-            winding_tooth_contact3.updateConfiguration();
-            winding_yoke_contact3.updateConfiguration();
-
-            winding_slot_contact4.updateConfiguration();
-            winding_tooth_contact4.updateConfiguration();
-            winding_yoke_contact4.updateConfiguration();
-
-            winding_slot_contact5.updateConfiguration();
-            winding_tooth_contact5.updateConfiguration();
-            winding_yoke_contact5.updateConfiguration();
-
-            winding_slot_contact6.updateConfiguration();
-            winding_tooth_contact6.updateConfiguration();
-            winding_yoke_contact6.updateConfiguration();
-
-            winding_slot_contact7.updateConfiguration();
-            winding_tooth_contact7.updateConfiguration();
-            winding_yoke_contact7.updateConfiguration();
-
-            winding_slot_contact8.updateConfiguration();
-            winding_tooth_contact8.updateConfiguration();
-            winding_yoke_contact8.updateConfiguration();
-
-            winding_slot_contact9.updateConfiguration();
-            winding_tooth_contact9.updateConfiguration();
-            winding_yoke_contact9.updateConfiguration();
-
-            winding_slot_contact10.updateConfiguration();
-            winding_tooth_contact10.updateConfiguration();
-            winding_yoke_contact10.updateConfiguration();
-
-            winding_slot_contact11.updateConfiguration();
-            winding_tooth_contact11.updateConfiguration();
-            winding_yoke_contact11.updateConfiguration();
-
-            winding_slot_contact12.updateConfiguration();
-            winding_tooth_contact12.updateConfiguration();
-            winding_yoke_contact12.updateConfiguration();
-
+            winding_slot_contact.updateConfiguration();
+            winding_tooth_contact.updateConfiguration();
+            winding_yoke_contact.updateConfiguration();
         }
 
         TickCount t2 = TickCount::now();
@@ -814,55 +607,9 @@ int main(int ac, char *av[])
         body_states_recording.writeToFile();
         write_recorded_water_pressure.writeToFile(number_of_iterations);
         write_fluid_phi.writeToFile(number_of_iterations);
-
-        write_slot_phi1.writeToFile(number_of_iterations);
-        write_tooth_phi1.writeToFile(number_of_iterations);
-        write_yoke_phi1.writeToFile(number_of_iterations);
-
-        write_slot_phi2.writeToFile(number_of_iterations);
-        write_tooth_phi2.writeToFile(number_of_iterations);
-        write_yoke_phi2.writeToFile(number_of_iterations);
-
-        write_slot_phi3.writeToFile(number_of_iterations);
-        write_tooth_phi3.writeToFile(number_of_iterations);
-        write_yoke_phi3.writeToFile(number_of_iterations);
-
-        write_slot_phi4.writeToFile(number_of_iterations);
-        write_tooth_phi4.writeToFile(number_of_iterations);
-        write_yoke_phi4.writeToFile(number_of_iterations);
-
-        write_slot_phi5.writeToFile(number_of_iterations);
-        write_tooth_phi5.writeToFile(number_of_iterations);
-        write_yoke_phi5.writeToFile(number_of_iterations);
-
-        write_slot_phi6.writeToFile(number_of_iterations);
-        write_tooth_phi6.writeToFile(number_of_iterations);
-        write_yoke_phi6.writeToFile(number_of_iterations);
-
-        write_slot_phi7.writeToFile(number_of_iterations);
-        write_tooth_phi7.writeToFile(number_of_iterations);
-        write_yoke_phi7.writeToFile(number_of_iterations);
-
-        write_slot_phi8.writeToFile(number_of_iterations);
-        write_tooth_phi8.writeToFile(number_of_iterations);
-        write_yoke_phi8.writeToFile(number_of_iterations);
-
-        write_slot_phi9.writeToFile(number_of_iterations);
-        write_tooth_phi9.writeToFile(number_of_iterations);
-        write_yoke_phi9.writeToFile(number_of_iterations);
-
-        write_slot_phi10.writeToFile(number_of_iterations);
-        write_tooth_phi10.writeToFile(number_of_iterations);
-        write_yoke_phi10.writeToFile(number_of_iterations);
-
-        write_slot_phi11.writeToFile(number_of_iterations);
-        write_tooth_phi11.writeToFile(number_of_iterations);
-        write_yoke_phi11.writeToFile(number_of_iterations);
-
-        write_slot_phi12.writeToFile(number_of_iterations);
-        write_tooth_phi12.writeToFile(number_of_iterations);
-        write_yoke_phi12.writeToFile(number_of_iterations);
-
+        write_slot_phi.writeToFile(number_of_iterations);
+        write_tooth_phi.writeToFile(number_of_iterations);
+        write_yoke_phi.writeToFile(number_of_iterations);
         TickCount t3 = TickCount::now();
         interval += t3 - t2;
     }
