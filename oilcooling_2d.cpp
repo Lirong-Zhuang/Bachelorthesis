@@ -44,10 +44,67 @@ Transform inlet_transform(Rotation2d(-(Pi / 2)), inlet_translation);
 BoundingBox system_domain_bounds(Vec2d(-BW - RM, -BW - RM), Vec2d(RM + BW, RM + BW));
 Vecd center(0.0, 0.0);
 // observer location
-StdVec<Vecd> observation_location = {Vecd(0, 0)};
-StdVec<Vecd> observation_location_slot = {Vecd(0, WD)};
-StdVec<Vecd> observation_location_tooth = {Vecd((-(0.5 * WL)), WD)};
-StdVec<Vecd> observation_location_yoke = {Vecd((-(0.25 * WL)), WD + 0.5 * WH)};
+StdVec<Vecd> slot_locations = {
+    Vecd(WD, 0),
+    Vecd(WD *cos(angle_increment), WD *sin(angle_increment)),
+    Vecd(WD *cos(2 * angle_increment), WD *sin(2 * angle_increment)),
+    Vecd(WD *cos(3 * angle_increment), WD *sin(3 * angle_increment)),
+    Vecd(WD *cos(4 * angle_increment), WD *sin(4 * angle_increment)),
+    Vecd(WD *cos(5 * angle_increment), WD *sin(5 * angle_increment)),
+    Vecd(WD *cos(6 * angle_increment), WD *sin(6 * angle_increment)),
+    Vecd(WD *cos(7 * angle_increment), WD *sin(7 * angle_increment)),
+    Vecd(WD *cos(8 * angle_increment), WD *sin(8 * angle_increment)),
+    Vecd(WD *cos(9 * angle_increment), WD *sin(9 * angle_increment)),
+    Vecd(WD *cos(10 * angle_increment), WD *sin(10 * angle_increment)),
+    Vecd(WD *cos(11 * angle_increment), WD *sin(11 * angle_increment))};
+StdVec<Vecd> tooth_locations = {
+    Vecd(WD, 0.5 * WL),
+    Vecd(WD *cos(angle_increment) - 0.5 * WL * sin(angle_increment),
+         WD *sin(angle_increment) + 0.5 * WL * cos(angle_increment)),
+    Vecd(WD *cos(2 * angle_increment) - 0.5 * WL * sin(2 * angle_increment),
+         WD *sin(2 * angle_increment) + 0.5 * WL * cos(2 * angle_increment)),
+    Vecd(WD *cos(3 * angle_increment) - 0.5 * WL * sin(3 * angle_increment),
+         WD *sin(3 * angle_increment) + 0.5 * WL * cos(3 * angle_increment)),
+    Vecd(WD *cos(4 * angle_increment) - 0.5 * WL * sin(4 * angle_increment),
+         WD *sin(4 * angle_increment) + 0.5 * WL * cos(4 * angle_increment)),
+    Vecd(WD *cos(5 * angle_increment) - 0.5 * WL * sin(5 * angle_increment),
+         WD *sin(5 * angle_increment) + 0.5 * WL * cos(5 * angle_increment)),
+    Vecd(WD *cos(6 * angle_increment) - 0.5 * WL * sin(6 * angle_increment),
+         WD *sin(6 * angle_increment) + 0.5 * WL * cos(6 * angle_increment)),
+    Vecd(WD *cos(7 * angle_increment) - 0.5 * WL * sin(7 * angle_increment),
+         WD *sin(7 * angle_increment) + 0.5 * WL * cos(7 * angle_increment)),
+    Vecd(WD *cos(8 * angle_increment) - 0.5 * WL * sin(8 * angle_increment),
+         WD *sin(8 * angle_increment) + 0.5 * WL * cos(8 * angle_increment)),
+    Vecd(WD *cos(9 * angle_increment) - 0.5 * WL * sin(9 * angle_increment),
+         WD *sin(9 * angle_increment) + 0.5 * WL * cos(9 * angle_increment)),
+    Vecd(WD *cos(10 * angle_increment) - 0.5 * WL * sin(10 * angle_increment),
+         WD *sin(10 * angle_increment) + 0.5 * WL * cos(10 * angle_increment)),
+    Vecd(WD *cos(11 * angle_increment) - 0.5 * WL * sin(11 * angle_increment),
+         WD *sin(11 * angle_increment) + 0.5 * WL * cos(11 * angle_increment))};
+StdVec<Vecd> yoke_locations = {
+    Vecd(WD + 0.5 * WH, 0.25 * WL),
+    Vecd(WD *cos(angle_increment) + 0.5 * WH * cos(angle_increment) - 0.25 * WL * sin(angle_increment),
+         WD *sin(angle_increment) + 0.5 * WH * sin(angle_increment) + 0.25 * WL * cos(angle_increment)),
+    Vecd(WD *cos(2 * angle_increment) + 0.5 * WH * cos(2 * angle_increment) - 0.25 * WL * sin(2 * angle_increment),
+         WD *sin(2 * angle_increment) + 0.5 * WH * sin(2 * angle_increment) + 0.25 * WL * cos(2 * angle_increment)),
+    Vecd(WD *cos(3 * angle_increment) + 0.5 * WH * cos(3 * angle_increment) - 0.25 * WL * sin(3 * angle_increment),
+         WD *sin(3 * angle_increment) + 0.5 * WH * sin(3 * angle_increment) + 0.25 * WL * cos(3 * angle_increment)),
+    Vecd(WD *cos(4 * angle_increment) + 0.5 * WH * cos(4 * angle_increment) - 0.25 * WL * sin(4 * angle_increment),
+         WD *sin(4 * angle_increment) + 0.5 * WH * sin(4 * angle_increment) + 0.25 * WL * cos(4 * angle_increment)),
+    Vecd(WD *cos(5 * angle_increment) + 0.5 * WH * cos(5 * angle_increment) - 0.25 * WL * sin(5 * angle_increment),
+         WD *sin(5 * angle_increment) + 0.5 * WH * sin(5 * angle_increment) + 0.25 * WL * cos(5 * angle_increment)),
+    Vecd(WD *cos(6 * angle_increment) + 0.5 * WH * cos(6 * angle_increment) - 0.25 * WL * sin(6 * angle_increment),
+         WD *sin(6 * angle_increment) + 0.5 * WH * sin(6 * angle_increment) + 0.25 * WL * cos(6 * angle_increment)),
+    Vecd(WD *cos(7 * angle_increment) + 0.5 * WH * cos(7 * angle_increment) - 0.25 * WL * sin(7 * angle_increment),
+         WD *sin(7 * angle_increment) + 0.5 * WH * sin(7 * angle_increment) + 0.25 * WL * cos(7 * angle_increment)),
+    Vecd(WD *cos(8 * angle_increment) + 0.5 * WH * cos(8 * angle_increment) - 0.25 * WL * sin(8 * angle_increment),
+         WD *sin(8 * angle_increment) + 0.5 * WH * sin(8 * angle_increment) + 0.25 * WL * cos(8 * angle_increment)),
+    Vecd(WD *cos(9 * angle_increment) + 0.5 * WH * cos(9 * angle_increment) - 0.25 * WL * sin(9 * angle_increment),
+         WD *sin(9 * angle_increment) + 0.5 * WH * sin(9 * angle_increment) + 0.25 * WL * cos(9 * angle_increment)),
+    Vecd(WD *cos(10 * angle_increment) + 0.5 * WH * cos(10 * angle_increment) - 0.25 * WL * sin(10 * angle_increment),
+         WD *sin(10 * angle_increment) + 0.5 * WH * sin(10 * angle_increment) + 0.25 * WL * cos(10 * angle_increment)),
+    Vecd(WD *cos(11 * angle_increment) + 0.5 * WH * cos(11 * angle_increment) - 0.25 * WL * sin(11 * angle_increment),
+         WD *sin(11 * angle_increment) + 0.5 * WH * sin(11 * angle_increment) + 0.25 * WL * cos(11 * angle_increment))};
 Real rho0_f = 812;     /**< Reference density of fluid. */
 Real gravity_g = 9.81; /**< Gravity force of fluid. */
 // dynamics informations of oil
@@ -59,13 +116,13 @@ Real c_f = 10.0 * U_f;                                                    /**< R
 Real rotor_rotation_velocity = 900;                    /**<Angular velocity rpm. */
 Real Omega = -(rotor_rotation_velocity * 2 * Pi / 60); /**<Angle of rotor. */
 // thermal parameters
-Real mu_f = 0.00975;                                             /**< Dynamics viscosity [Pa * s]. */
-Real phi_winding = 110.0;                                        /**< Temperature of winding at begin. */
+Real mu_f = 0.00975;                                            /**< Dynamics viscosity [Pa * s]. */
+Real phi_winding = 110.0;                                       /**< Temperature of winding at begin. */
 Real phi_fluid_initial = 75.0;                                  /**< Temperature of oil at begin. */
 Real k_oil = 7.62e-8;                                           /**< Diffusion coefficient of oil 2.0e-7. */
 Real k_winding = 1.14e-4;                                       /**< Diffusion coefficient of winding 1.1e-6. */
 Real k_contact = (2 * k_oil * k_winding) / (k_oil + k_winding); /**< Thermal conductivity between winding and oil. */
-Real dq = 1.0;                                                 /**< Heating efficient of internal heat source [°C/s]. */
+Real dq = 1.5;                                                  /**< Heating efficient of internal heat source [°C/s]. */
 //----------------------------------------------------------------------
 //	Geometrie of the othor 4 inlets.
 //----------------------------------------------------------------------
@@ -257,14 +314,12 @@ int main(int ac, char *av[])
         ? winding.generateParticles<BaseParticles, Reload>(winding.getName())
         : winding.generateParticles<BaseParticles, Lattice>();
 
-    ObserverBody fluid_observer(sph_system, "FluidObserver");
-    fluid_observer.generateParticles<ObserverParticles>(observation_location);
     ObserverBody slot_observer(sph_system, "ObserverSlot");
-    slot_observer.generateParticles<ObserverParticles>(observation_location_slot);
+    slot_observer.generateParticles<ObserverParticles>(slot_locations);
     ObserverBody tooth_observer(sph_system, "ObserverTooth");
-    tooth_observer.generateParticles<ObserverParticles>(observation_location_tooth);
+    tooth_observer.generateParticles<ObserverParticles>(tooth_locations);
     ObserverBody yoke_observer(sph_system, "ObserverYoke");
-    yoke_observer.generateParticles<ObserverParticles>(observation_location_yoke);
+    yoke_observer.generateParticles<ObserverParticles>(yoke_locations);
     //----------------------------------------------------------------------
     //	Run particle relaxation for body-fitted distribution if chosen.
     //----------------------------------------------------------------------
@@ -342,7 +397,6 @@ int main(int ac, char *av[])
     ContactRelation oil_body_contact(oil_body, {&wall, &rotor, &winding});
     ContactRelation oil_contact(oil_body, {&winding});
     ContactRelation winding_contact(winding, {&oil_body});
-    ContactRelation fluid_observer_contact(fluid_observer, {&oil_body});
     ContactRelation winding_slot_contact(slot_observer, {&winding});
     ContactRelation winding_tooth_contact(tooth_observer, {&winding});
     ContactRelation winding_yoke_contact(yoke_observer, {&winding});
@@ -408,12 +462,9 @@ int main(int ac, char *av[])
     body_states_recording.addToWrite<Real>(oil_body, "Phi");
     body_states_recording.addToWrite<Real>(winding, "Phi");
     RegressionTestDynamicTimeWarping<ReducedQuantityRecording<TotalMechanicalEnergy>> write_water_mechanical_energy(oil_body, gravity);
-    RegressionTestDynamicTimeWarping<ObservedQuantityRecording<Real>> write_recorded_water_pressure("Pressure", fluid_observer_contact);
-    RegressionTestEnsembleAverage<ObservedQuantityRecording<Real>> write_fluid_phi("Phi", fluid_observer_contact);
     RegressionTestEnsembleAverage<ObservedQuantityRecording<Real>> write_slot_phi("Phi", winding_slot_contact);
     RegressionTestEnsembleAverage<ObservedQuantityRecording<Real>> write_tooth_phi("Phi", winding_tooth_contact);
     RegressionTestEnsembleAverage<ObservedQuantityRecording<Real>> write_yoke_phi("Phi", winding_yoke_contact);
-    //----------------------------------------------------------------------
     //	Building of multibody for rotor rotation.
     //----------------------------------------------------------------------
     SimTK::MultibodySystem MBsystem;
@@ -454,7 +505,7 @@ int main(int ac, char *av[])
     //----------------------------------------------------------------------
     size_t number_of_iterations = sph_system.RestartStep();
     int screen_output_interval = 100;
-    Real end_time = 10.0;
+    Real end_time = 60.0;
     Real output_interval = 0.05;
     Real dt = 0.0; /**< Default acoustic time step sizes. */
     /** statistics for computing CPU time. */
@@ -498,7 +549,7 @@ int main(int ac, char *av[])
                 inflow_condition4.exec();
                 inflow_condition5.exec();
                 thermal_relaxation_complex_oil.exec(dt);
-                heat_source.exec(dt);    /** Implement of heat recources. */
+                heat_source.exec(dt); /** Implement of heat recources. */
                 thermal_relaxation_complex_winding.exec(dt);
                 dt = get_fluid_time_step_size.exec();
                 relaxation_time += dt;
@@ -534,12 +585,10 @@ int main(int ac, char *av[])
             /** outflow delete*/
             outlet_disposer_outflow_deletion.exec();
             /** Update cell linked list and configuration. */
-
             oil_body.updateCellLinkedListWithParticleSort(100);
             oil_body_complex.updateConfiguration();
             oil_thermo_complex.updateConfiguration();
             winding_thermo_complex.updateConfiguration();
-            fluid_observer_contact.updateConfiguration();
             winding_slot_contact.updateConfiguration();
             winding_tooth_contact.updateConfiguration();
             winding_yoke_contact.updateConfiguration();
@@ -549,8 +598,6 @@ int main(int ac, char *av[])
         write_water_mechanical_energy.writeToFile(number_of_iterations);
         indicate_free_surface.exec();
         body_states_recording.writeToFile();
-        write_recorded_water_pressure.writeToFile(number_of_iterations);
-        write_fluid_phi.writeToFile(number_of_iterations);
         write_slot_phi.writeToFile(number_of_iterations);
         write_tooth_phi.writeToFile(number_of_iterations);
         write_yoke_phi.writeToFile(number_of_iterations);
