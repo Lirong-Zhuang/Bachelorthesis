@@ -1,12 +1,13 @@
 /**
  * @file 	oil_cooling_3D.cpp
  * @brief 	3D model oil cooling system in a running electric motor.
- * Relaxation              功能正常
+ * Relaxation               功能正常
  * STL文件导入建模          功能正常
- * 流体动力场               正在调试
+ * 流体动力场               功能正常
  * 转子转动                 未添加
  * 流体热力场               未添加
  * 热电偶                   未添加
+ * 坐标轴原点存在问题，cad文件与spinxsys原点存在偏移
  * @author 	Lirong Zhuang
  */
 
@@ -20,19 +21,19 @@ std::string hausing_CAD = "./input/Electricmotor_Hausing.STL";
 std::string rotor_CAD = "./input/Electricmotor_Rotor.STL";
 std::string winding_CAD = "./input/Electricmotor_Winding.STL";
 std::string cover_CAD = "./input/Electricmotor_Cover.STL";
-std::string fluid_CAD = "./input/Electricmotor_Fluid.STL";
+// std::string fluid_CAD = "./input/Electricmotor_Fluid.STL";
 //----------------------------------------------------------------------
 //	Basic geometry parameters and numerical setup.
 //----------------------------------------------------------------------
-Real DL = 0.25; // Domain length.
-Real DH = 0.25;  // Domain height.
-Real DW = 0.5;  // Domain width.
-Real DO = 0.02;  /**< Outflow diameter. */
+Real DL = 0.25;               // Domain length.
+Real DH = 0.25;               // Domain height.
+Real DW = 0.25;               // Domain width.
+Real DO = 0.02;               /**< Outflow diameter. */
 Real resolution_ref = 0.0028; /**< Initial reference particle spacing. */
 Real BW = resolution_ref * 4; /**< Extending width for wall boundary. */
 Vec3d domain_lower_bound(-DL, -DH, -DW);
 Vec3d domain_upper_bound(DL, DH, DW);
-Vecd translation(0.0, 0.0, 0.0);
+Vecd translation(-0.129, -0.127, -0.12);
 Real scaling = 0.001;
 //----------------------------------------------------------------------
 //	Below are common parts for the two test geometries.
@@ -43,15 +44,15 @@ BoundingBox system_domain_bounds(domain_lower_bound, domain_upper_bound);
 //----------------------------------------------------------------------
 Real Wnum = 12; /**< Winding Number. */
 Real angle_increment = 2 * Pi / Wnum;
-Real DMO = 0.22;  /**< Diameter of outer motor hausing. */
-Real RMO = 0.5 * DMO; /**< Radius of outer motor hausing. */
-Real DMN = 0.196;      /**< Diameter of inner motor hausing. */
-Real RMI = 0.5 * DMN; /**< Radius of inner motor hausing. */
-Real LL = 0.0028;      /**< Inflow region length. */
-Real LH = RMO - RMI; /**< Inflows region height. */
+Real DMO = 0.22;              /**< Diameter of outer motor hausing. */
+Real RMO = 0.5 * DMO;         /**< Radius of outer motor hausing. */
+Real DMN = 0.196;             /**< Diameter of inner motor hausing. */
+Real RMI = 0.5 * DMN;         /**< Radius of inner motor hausing. */
+Real LL = 0.006;              /**< Inflow region length. */
+Real LH = RMO - RMI;          /**< Inflows region height. */
 Real inlet_height = RMO - LH; /**< Inflow location height */
-Real rho0_f = 812;     /**< Reference density of fluid. */
-Real gravity_g = 9.81; /**< Gravity force of fluid. */
+Real rho0_f = 812;            /**< Reference density of fluid. */
+Real gravity_g = 9.81;        /**< Gravity force of fluid. */
 // Axis
 Vec3d axis_x(1.0, 0.0, 0.0);
 Vec3d axis_y(0.0, 1.0, 0.0);
@@ -76,11 +77,11 @@ Real dq = 1.5;                                                  /**< Heating eff
 //	Geometrie of the inlets and oulets.
 //----------------------------------------------------------------------
 Real R_inlet = RMO - 0.5 * LH;
-Real L_inlet = 74.5;
+Real L_inlet = 0.085;
 Real R_outlet = -(0.5 * (RMO + RMI));
-Real L_outlet = 85;
+Real L_outlet = 0.085;
 Vec3d inlet_halfsize(0.5 * LH, 0.5 * LL, 0.5 * LL);
-Vec3d outlet_halfsize(0.5*(RMO-RMI), 0.5 * DO, 0.5 * DO);
+Vec3d outlet_halfsize(0.5 * (RMO - RMI), 0.5 * DO, 0.5 * DO);
 Vec3d inleta1_translation = Vec3d(0, R_inlet, L_inlet);
 Transform inleta1_transform(Rotation3d(-(Pi / 2), axis_z), inleta1_translation);
 Vec3d inleta2_translation = Vec3d(R_inlet * cos(5 * angle_increment), R_inlet *sin(5 * angle_increment), L_inlet);
@@ -118,7 +119,7 @@ class HausingFromMesh : public ComplexShape
   public:
     explicit HausingFromMesh(const std::string &shape_name) : ComplexShape(shape_name)
     {
-        add<ExtrudeShape<TriangleMeshShapeSTL>>(resolution_ref, hausing_CAD, translation, scaling);
+        add<ExtrudeShape<TriangleMeshShapeSTL>>(0.5 * resolution_ref, hausing_CAD, translation, scaling);
     }
 };
 //----------------------------------------------------------------------
@@ -129,7 +130,7 @@ class RotorFromMesh : public ComplexShape
   public:
     explicit RotorFromMesh(const std::string &shape_name) : ComplexShape(shape_name)
     {
-        add<ExtrudeShape<TriangleMeshShapeSTL>>(2*resolution_ref, rotor_CAD, translation, scaling);
+        add<ExtrudeShape<TriangleMeshShapeSTL>>(2 * resolution_ref, rotor_CAD, translation, scaling);
     }
 };
 //----------------------------------------------------------------------
@@ -151,7 +152,7 @@ class CoverFromMesh : public ComplexShape
   public:
     explicit CoverFromMesh(const std::string &shape_name) : ComplexShape(shape_name)
     {
-        add<ExtrudeShape<TriangleMeshShapeSTL>>(3*resolution_ref, cover_CAD, translation, scaling);
+        add<ExtrudeShape<TriangleMeshShapeSTL>>(3 * resolution_ref, cover_CAD, translation, scaling);
     }
 };
 //----------------------------------------------------------------------
@@ -162,7 +163,17 @@ class FluidFromMesh : public ComplexShape
   public:
     explicit FluidFromMesh(const std::string &shape_name) : ComplexShape(shape_name)
     {
-        add<ExtrudeShape<TriangleMeshShapeSTL>>(resolution_ref, fluid_CAD, translation, scaling);
+        add<TriangleMeshShapeCylinder>(axis1, 0.5 * LL, 0.5 * LH, resolution_ref, inleta1_translation);
+        add<TriangleMeshShapeCylinder>(axis2, 0.5 * LL, 0.5 * LH, resolution_ref, inleta2_translation);
+        add<TriangleMeshShapeCylinder>(axis3, 0.5 * LL, 0.5 * LH, resolution_ref, inleta3_translation);
+        add<TriangleMeshShapeCylinder>(axis4, 0.5 * LL, 0.5 * LH, resolution_ref, inleta4_translation);
+        add<TriangleMeshShapeCylinder>(axis5, 0.5 * LL, 0.5 * LH, resolution_ref, inleta5_translation);
+        add<TriangleMeshShapeCylinder>(axis1, 0.5 * LL, 0.5 * LH, resolution_ref, inletb1_translation);
+        add<TriangleMeshShapeCylinder>(axis2, 0.5 * LL, 0.5 * LH, resolution_ref, inletb2_translation);
+        add<TriangleMeshShapeCylinder>(axis3, 0.5 * LL, 0.5 * LH, resolution_ref, inletb3_translation);
+        add<TriangleMeshShapeCylinder>(axis4, 0.5 * LL, 0.5 * LH, resolution_ref, inletb4_translation);
+        add<TriangleMeshShapeCylinder>(axis5, 0.5 * LL, 0.5 * LH, resolution_ref, inletb5_translation);
+        // add<ExtrudeShape<TriangleMeshShapeSTL>>(resolution_ref, fluid_CAD, translation, scaling);
     }
 };
 //----------------------------------------------------------------------
@@ -193,8 +204,8 @@ int main(int ac, char *av[])
     /** Build up a SPHSystem */
     SPHSystem sph_system(system_domain_bounds, resolution_ref);
     sph_system.handleCommandlineOptions(ac, av)->setIOEnvironment();
-    sph_system.setRunParticleRelaxation(false);  // Tag for run particle relaxation for body-fitted distribution
-    sph_system.setReloadParticles(false);        // Tag for computation with save particles distribution
+    sph_system.setRunParticleRelaxation(false); // Tag for run particle relaxation for body-fitted distribution
+    sph_system.setReloadParticles(false);       // Tag for computation with save particles distribution
     /** Set the starting time. */
     GlobalStaticVariables::physical_time_ = 0.0;
     //----------------------------------------------------------------------
@@ -475,7 +486,7 @@ int main(int ac, char *av[])
             }
             number_of_iterations++;
 
-             /** inflow emitter injection*/
+            /** inflow emitter injection*/
             emitter_injection_a1.exec();
             emitter_injection_a2.exec();
             emitter_injection_a3.exec();
