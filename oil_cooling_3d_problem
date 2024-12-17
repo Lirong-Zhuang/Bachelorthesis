@@ -33,7 +33,7 @@ Real resolution_ref = 0.0028; /**< Initial reference particle spacing. */
 Real BW = resolution_ref * 4; /**< Extending width for wall boundary. */
 Vec3d domain_lower_bound(-DL, -DH, -DW);
 Vec3d domain_upper_bound(DL, DH, DW);
-Vecd translation(-0.129, -0.127, -0.12);
+Vecd translation(0.0, 0.0, 0.0);
 Real scaling = 0.001;
 //----------------------------------------------------------------------
 //	Below are common parts for the two test geometries.
