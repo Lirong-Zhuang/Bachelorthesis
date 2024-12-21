@@ -5,8 +5,8 @@
  * STL文件导入建模          功能正常
  * 流体动力场               功能正常
  * 转子转动                 功能正常
- * 流体热力场               未添加
- * 热电偶                   未添加
+ * 流体热力场               功能正常
+ * 热电耦                   功能正常
  * 坐标轴原点存在问题，cad文件与spinxsys原点存在偏移
  * @author 	Lirong Zhuang
  */
@@ -48,8 +48,13 @@ Real DMO = 0.22;              /**< Diameter of outer motor hausing. */
 Real RMO = 0.5 * DMO;         /**< Radius of outer motor hausing. */
 Real DMN = 0.196;             /**< Diameter of inner motor hausing. */
 Real RMI = 0.5 * DMN;         /**< Radius of inner motor hausing. */
+Real DRO = 0.12;              /**< Diameter of outer rotor. */
 Real LL = 0.006;              /**< Inflow region length. */
 Real LH = RMO - RMI;          /**< Inflows region height. */
+Real WL = 0.03;               /**< Winding length. */
+Real WH = 0.025;              /**< Winding height. */
+Real AG = 0.001;              /**< Air-gap. */
+Real WD = 0.5 * DRO + AG + 0.5 * WH; /**< Distance from center point to the center of a winding. */
 Real inlet_height = DMO - LH; /**< Inflow location height */
 Real rho0_f = 812;            /**< Reference density of fluid. */
 Real gravity_g = 9.81;        /**< Gravity force of fluid. */
@@ -77,7 +82,7 @@ Real dq = 1.5;                                                  /**< Heating eff
 //	Geometrie of the inlets and oulets.
 //----------------------------------------------------------------------
 Real R_inlet = RMO - 0.5 * LH;
-Real L_inlet = 0.085;
+Real L_inlet = 0.0745;
 Real R_outlet = -(0.5 * (RMO + RMI));
 Real L_outlet = 0.085;
 Vec3d inlet_halfsize(0.5 * LH, 0.5 * LL, 0.5 * LL);
@@ -111,6 +116,95 @@ SimTK::UnitVec3 axis2(cos(5 * angle_increment), sin(5 * angle_increment), 0.0);
 SimTK::UnitVec3 axis3(cos(4 * angle_increment), sin(4 * angle_increment), 0.0);
 SimTK::UnitVec3 axis4(cos(2 * angle_increment), sin(2 * angle_increment), 0.0);
 SimTK::UnitVec3 axis5(cos(1 * angle_increment), sin(1 * angle_increment), 0.0);
+//----------------------------------------------------------------------
+//	Locations of observer.
+//----------------------------------------------------------------------
+Real value_z_slots = 0.07; /**< Location of slots at axis z(if all 12 slots are in the same xy-flat. */
+Real value_z_toothes = 0.07; /**< Location of slots at axis z(if all 12 toothes are in the same xy-flat. */
+Real value_z_yokes = 0.07; /**< Location of slots at axis z(if all 12 yokes are in the same xy-flat. */
+StdVec<Vec3d> slot_locations = {
+    Vec3d(WD, 0, value_z_slots),
+    Vec3d(WD *cos(angle_increment), WD *sin(angle_increment), value_z_slots),
+    Vec3d(WD *cos(2 * angle_increment), WD *sin(2 * angle_increment), value_z_slots),
+    Vec3d(WD *cos(3 * angle_increment), WD *sin(3 * angle_increment), value_z_slots),
+    Vec3d(WD *cos(4 * angle_increment), WD *sin(4 * angle_increment), value_z_slots),
+    Vec3d(WD *cos(5 * angle_increment), WD *sin(5 * angle_increment), value_z_slots),
+    Vec3d(WD *cos(6 * angle_increment), WD *sin(6 * angle_increment), value_z_slots),
+    Vec3d(WD *cos(7 * angle_increment), WD *sin(7 * angle_increment), value_z_slots),
+    Vec3d(WD *cos(8 * angle_increment), WD *sin(8 * angle_increment), value_z_slots),
+    Vec3d(WD *cos(9 * angle_increment), WD *sin(9 * angle_increment), value_z_slots),
+    Vec3d(WD *cos(10 * angle_increment), WD *sin(10 * angle_increment), value_z_slots),
+    Vec3d(WD *cos(11 * angle_increment), WD *sin(11 * angle_increment), value_z_slots)};
+StdVec<Vec3d> tooth_locations = {
+    Vec3d(WD, 0.5 * WL, value_z_toothes),
+    Vec3d(WD *cos(angle_increment) - 0.5 * WL * sin(angle_increment),
+          WD *sin(angle_increment) + 0.5 * WL * cos(angle_increment),
+          value_z_toothes),
+    Vec3d(WD *cos(2 * angle_increment) - 0.5 * WL * sin(2 * angle_increment),
+          WD *sin(2 * angle_increment) + 0.5 * WL * cos(2 * angle_increment),
+          value_z_toothes),
+    Vec3d(WD *cos(3 * angle_increment) - 0.5 * WL * sin(3 * angle_increment),
+          WD *sin(3 * angle_increment) + 0.5 * WL * cos(3 * angle_increment),
+          value_z_toothes),
+    Vec3d(WD *cos(4 * angle_increment) - 0.5 * WL * sin(4 * angle_increment),
+          WD *sin(4 * angle_increment) + 0.5 * WL * cos(4 * angle_increment),
+          value_z_toothes),
+    Vec3d(WD *cos(5 * angle_increment) - 0.5 * WL * sin(5 * angle_increment),
+          WD *sin(5 * angle_increment) + 0.5 * WL * cos(5 * angle_increment),
+          value_z_toothes),
+    Vec3d(WD *cos(6 * angle_increment) - 0.5 * WL * sin(6 * angle_increment),
+          WD *sin(6 * angle_increment) + 0.5 * WL * cos(6 * angle_increment),
+          value_z_toothes),
+    Vec3d(WD *cos(7 * angle_increment) - 0.5 * WL * sin(7 * angle_increment),
+          WD *sin(7 * angle_increment) + 0.5 * WL * cos(7 * angle_increment),
+          value_z_toothes),
+    Vec3d(WD *cos(8 * angle_increment) - 0.5 * WL * sin(8 * angle_increment),
+          WD *sin(8 * angle_increment) + 0.5 * WL * cos(8 * angle_increment),
+          value_z_toothes),
+    Vec3d(WD *cos(9 * angle_increment) - 0.5 * WL * sin(9 * angle_increment),
+          WD *sin(9 * angle_increment) + 0.5 * WL * cos(9 * angle_increment),
+          value_z_toothes),
+    Vec3d(WD *cos(10 * angle_increment) - 0.5 * WL * sin(10 * angle_increment),
+          WD *sin(10 * angle_increment) + 0.5 * WL * cos(10 * angle_increment),
+          value_z_toothes),
+    Vec3d(WD *cos(11 * angle_increment) - 0.5 * WL * sin(11 * angle_increment),
+          WD *sin(11 * angle_increment) + 0.5 * WL * cos(11 * angle_increment),
+          value_z_toothes)};
+StdVec<Vec3d> yoke_locations = {
+    Vec3d(WD + 0.5 * WH, 0.25 * WL, value_z_yokes),
+    Vec3d(WD *cos(angle_increment) + 0.5 * WH * cos(angle_increment) - 0.25 * WL * sin(angle_increment),
+          WD *sin(angle_increment) + 0.5 * WH * sin(angle_increment) + 0.25 * WL * cos(angle_increment),
+          value_z_yokes),
+    Vec3d(WD *cos(2 * angle_increment) + 0.5 * WH * cos(2 * angle_increment) - 0.25 * WL * sin(2 * angle_increment),
+          WD *sin(2 * angle_increment) + 0.5 * WH * sin(2 * angle_increment) + 0.25 * WL * cos(2 * angle_increment),
+          value_z_yokes),
+    Vec3d(WD *cos(3 * angle_increment) + 0.5 * WH * cos(3 * angle_increment) - 0.25 * WL * sin(3 * angle_increment),
+          WD *sin(3 * angle_increment) + 0.5 * WH * sin(3 * angle_increment) + 0.25 * WL * cos(3 * angle_increment),
+          value_z_yokes),
+    Vec3d(WD *cos(4 * angle_increment) + 0.5 * WH * cos(4 * angle_increment) - 0.25 * WL * sin(4 * angle_increment),
+          WD *sin(4 * angle_increment) + 0.5 * WH * sin(4 * angle_increment) + 0.25 * WL * cos(4 * angle_increment),
+          value_z_yokes),
+    Vec3d(WD *cos(5 * angle_increment) + 0.5 * WH * cos(5 * angle_increment) - 0.25 * WL * sin(5 * angle_increment),
+          WD *sin(5 * angle_increment) + 0.5 * WH * sin(5 * angle_increment) + 0.25 * WL * cos(5 * angle_increment),
+          value_z_yokes),
+    Vec3d(WD *cos(6 * angle_increment) + 0.5 * WH * cos(6 * angle_increment) - 0.25 * WL * sin(6 * angle_increment),
+          WD *sin(6 * angle_increment) + 0.5 * WH * sin(6 * angle_increment) + 0.25 * WL * cos(6 * angle_increment),
+          value_z_yokes),
+    Vec3d(WD *cos(7 * angle_increment) + 0.5 * WH * cos(7 * angle_increment) - 0.25 * WL * sin(7 * angle_increment),
+          WD *sin(7 * angle_increment) + 0.5 * WH * sin(7 * angle_increment) + 0.25 * WL * cos(7 * angle_increment),
+          value_z_yokes),
+    Vec3d(WD *cos(8 * angle_increment) + 0.5 * WH * cos(8 * angle_increment) - 0.25 * WL * sin(8 * angle_increment),
+          WD *sin(8 * angle_increment) + 0.5 * WH * sin(8 * angle_increment) + 0.25 * WL * cos(8 * angle_increment),
+          value_z_yokes),
+    Vec3d(WD *cos(9 * angle_increment) + 0.5 * WH * cos(9 * angle_increment) - 0.25 * WL * sin(9 * angle_increment),
+          WD *sin(9 * angle_increment) + 0.5 * WH * sin(9 * angle_increment) + 0.25 * WL * cos(9 * angle_increment),
+          value_z_yokes),
+    Vec3d(WD *cos(10 * angle_increment) + 0.5 * WH * cos(10 * angle_increment) - 0.25 * WL * sin(10 * angle_increment),
+          WD *sin(10 * angle_increment) + 0.5 * WH * sin(10 * angle_increment) + 0.25 * WL * cos(10 * angle_increment),
+          value_z_yokes),
+    Vec3d(WD *cos(11 * angle_increment) + 0.5 * WH * cos(11 * angle_increment) - 0.25 * WL * sin(11 * angle_increment),
+          WD *sin(11 * angle_increment) + 0.5 * WH * sin(11 * angle_increment) + 0.25 * WL * cos(11 * angle_increment),
+          value_z_yokes)};
 //----------------------------------------------------------------------
 //	Case-dependent Hausing
 //----------------------------------------------------------------------
@@ -188,8 +282,60 @@ class InletInflowCondition : public fluid_dynamics::EmitterInflowCondition
   protected:
     virtual Vecd getTargetVelocity(Vecd &position, Vecd &velocity) override
     {
-        return Vec3d(0.5, 0.0, 0.0);
+        return Vec3d(v_inlet, 0.0, 0.0);
     }
+};
+//----------------------------------------------------------------------
+//	Application dependent initial condition of winding.
+//----------------------------------------------------------------------
+class ThermoWindingInitialCondition : public LocalDynamics, public DataDelegateSimple
+{
+  public:
+    explicit ThermoWindingInitialCondition(SPHBody &sph_body)
+        : LocalDynamics(sph_body), DataDelegateSimple(sph_body),
+          phi_(*particles_->registerSharedVariable<Real>("Phi")){};
+    void update(size_t index_i, Real dt)
+    {
+        phi_[index_i] = phi_winding;
+    };
+
+  protected:
+    StdLargeVec<Real> &phi_;
+};
+//----------------------------------------------------------------------
+//	The windings heat up due to the internal heat sources.
+//----------------------------------------------------------------------
+class ThermoWindingHeatSource : public LocalDynamics, public DataDelegateSimple
+{
+  public:
+    explicit ThermoWindingHeatSource(SPHBody &sph_body)
+        : LocalDynamics(sph_body), DataDelegateSimple(sph_body),
+          phi_(*particles_->registerSharedVariable<Real>("Phi")){};
+    void update(size_t index_i, Real dt)
+    {
+        phi_[index_i] += dq * dt;
+    }
+
+  protected:
+    StdLargeVec<Real> &phi_;
+};
+//----------------------------------------------------------------------
+//	Application dependent fluid body initial condition
+//----------------------------------------------------------------------
+class ThermofluidBodyInitialCondition : public LocalDynamics, public DataDelegateSimple
+{
+  public:
+    explicit ThermofluidBodyInitialCondition(SPHBody &sph_body)
+        : LocalDynamics(sph_body), DataDelegateSimple(sph_body),
+          phi_(*particles_->registerSharedVariable<Real>("Phi")){};
+
+    void update(size_t index_i, Real dt)
+    {
+        phi_[index_i] = phi_fluid_initial;
+    };
+
+  protected:
+    StdLargeVec<Real> &phi_;
 };
 //----------------------------------------------------------------------
 //	Set thermal relaxation between different bodies
@@ -205,7 +351,7 @@ int main(int ac, char *av[])
     SPHSystem sph_system(system_domain_bounds, resolution_ref);
     sph_system.handleCommandlineOptions(ac, av)->setIOEnvironment();
     sph_system.setRunParticleRelaxation(false); // Tag for run particle relaxation for body-fitted distribution
-    sph_system.setReloadParticles(false);       // Tag for computation with save particles distribution
+    sph_system.setReloadParticles(true);        // Tag for computation with save particles distribution
     /** Set the starting time. */
     GlobalStaticVariables::physical_time_ = 0.0;
     //----------------------------------------------------------------------
@@ -244,6 +390,13 @@ int main(int ac, char *av[])
     oil.defineMaterial<WeaklyCompressibleFluid>(rho0_f, c_f, mu_f);
     ParticleBuffer<ReserveSizeFactor> inlet_buffer(3000.0);
     oil.generateParticlesWithReserve<BaseParticles, Lattice>(inlet_buffer);
+
+    ObserverBody slot_observer(sph_system, "ObserverSlot");
+    slot_observer.generateParticles<ObserverParticles>(slot_locations);
+    ObserverBody tooth_observer(sph_system, "ObserverTooth");
+    tooth_observer.generateParticles<ObserverParticles>(tooth_locations);
+    ObserverBody yoke_observer(sph_system, "ObserverYoke");
+    yoke_observer.generateParticles<ObserverParticles>(yoke_locations);
     //----------------------------------------------------------------------
     //	Run particle relaxation for body-fitted distribution if chosen.
     //----------------------------------------------------------------------
@@ -332,10 +485,15 @@ int main(int ac, char *av[])
     ContactRelation oil_solid_contact(oil, {&hausing, &rotor, &winding, &cover});
     ContactRelation oil_thermal_contact(oil, {&winding});
     ContactRelation winding_thermal_contact(winding, {&oil});
+    ContactRelation winding_slot_contact(slot_observer, {&winding});
+    ContactRelation winding_tooth_contact(tooth_observer, {&winding});
+    ContactRelation winding_yoke_contact(yoke_observer, {&winding});
     //----------------------------------------------------------------------
     // Combined relations built from basic relations
     //----------------------------------------------------------------------
     ComplexRelation oil_body_complex(oil_inner, oil_solid_contact);
+    ComplexRelation oil_thermal_complex(oil_inner, oil_thermal_contact);
+    ComplexRelation winding_thermal_complex(winding_inner, winding_thermal_contact);
     //----------------------------------------------------------------------
     //	Define all numerical methods which are used in this case.
     //----------------------------------------------------------------------
@@ -389,12 +547,30 @@ int main(int ac, char *av[])
     SimpleDynamics<fluid_dynamics::DisposerOutflowDeletion> outlet_disposer_outflow_deletion_a(outlet_disposer_a);
     BodyAlignedBoxByCell outlet_disposer_b(oil, makeShared<AlignedBoxShape>(xAxis, outletb_transform, outlet_halfsize));
     SimpleDynamics<fluid_dynamics::DisposerOutflowDeletion> outlet_disposer_outflow_deletion_b(outlet_disposer_b);
+
+    IsotropicDiffusion diffusion_oil("Phi", "Phi", k_oil);
+    IsotropicDiffusion diffusion_winding("Phi", "Phi", k_winding);
+    IsotropicDiffusion conductivity_oil_winding("Phi", "Phi", k_contact);
+    ThermalRelaxationComplex thermal_relaxation_complex_oil(
+        ConstructorArgs(oil_inner, &diffusion_oil),
+        ConstructorArgs(oil_thermal_contact, &conductivity_oil_winding));
+    ThermalRelaxationComplex thermal_relaxation_complex_winding(
+        ConstructorArgs(winding_inner, &diffusion_winding),
+        ConstructorArgs(winding_thermal_contact, &conductivity_oil_winding));
+    SimpleDynamics<ThermoWindingInitialCondition> thermalwinding_condition(winding);
+    SimpleDynamics<ThermofluidBodyInitialCondition> thermalfluid_initial_condition(oil);
+    SimpleDynamics<ThermoWindingHeatSource> heat_source(winding);
     //----------------------------------------------------------------------
     //	File output and regression check.
     //----------------------------------------------------------------------
     BodyStatesRecordingToVtp body_states_recording(sph_system);
     body_states_recording.addToWrite<int>(oil, "Indicator");
+    body_states_recording.addToWrite<Real>(oil, "Phi");
+    body_states_recording.addToWrite<Real>(winding, "Phi");
     RegressionTestDynamicTimeWarping<ReducedQuantityRecording<TotalMechanicalEnergy>> write_water_mechanical_energy(oil, gravity);
+    RegressionTestEnsembleAverage<ObservedQuantityRecording<Real>> write_slot_phi("Phi", winding_slot_contact);
+    RegressionTestEnsembleAverage<ObservedQuantityRecording<Real>> write_tooth_phi("Phi", winding_tooth_contact);
+    RegressionTestEnsembleAverage<ObservedQuantityRecording<Real>> write_yoke_phi("Phi", winding_yoke_contact);
     //----------------------------------------------------------------------
     //	Building of multibody for rotor rotation.
     //----------------------------------------------------------------------
@@ -428,6 +604,8 @@ int main(int ac, char *av[])
     rotor_normal_direction.exec();
     winding_normal_direction.exec();
     cover_normal_direction.exec();
+    thermalwinding_condition.exec();
+    thermalfluid_initial_condition.exec();
     indicate_free_surface.exec();
     constant_gravity.exec();
     //----------------------------------------------------------------------
@@ -435,7 +613,7 @@ int main(int ac, char *av[])
     //----------------------------------------------------------------------
     size_t number_of_iterations = sph_system.RestartStep();
     int screen_output_interval = 100;
-    Real end_time = 15.0;
+    Real end_time = 5.0;
     Real output_interval = 0.05;
     Real dt = 0.0; /**< Default acoustic time step sizes. */
     /** statistics for computing CPU time. */
@@ -446,6 +624,9 @@ int main(int ac, char *av[])
     //----------------------------------------------------------------------
     body_states_recording.writeToFile();
     write_water_mechanical_energy.writeToFile(number_of_iterations);
+    write_slot_phi.writeToFile(number_of_iterations);
+    write_tooth_phi.writeToFile(number_of_iterations);
+    write_yoke_phi.writeToFile(number_of_iterations);
     //----------------------------------------------------------------------
     //	Main loop starts here.
     //----------------------------------------------------------------------
@@ -488,6 +669,9 @@ int main(int ac, char *av[])
                 inflow_condition_b3.exec();
                 inflow_condition_b4.exec();
                 inflow_condition_b5.exec();
+                thermal_relaxation_complex_oil.exec(dt);
+                heat_source.exec(dt); /** Implement of heat recources. */
+                thermal_relaxation_complex_winding.exec(dt);
                 dt = get_fluid_time_step_size.exec();
                 relaxation_time += dt;
                 integration_time += dt;
@@ -530,12 +714,20 @@ int main(int ac, char *av[])
             /** Update cell linked list and configuration. */
             oil.updateCellLinkedListWithParticleSort(100);
             oil_body_complex.updateConfiguration();
+            oil_thermal_complex.updateConfiguration();
+            winding_thermal_complex.updateConfiguration();
+            winding_slot_contact.updateConfiguration();
+            winding_tooth_contact.updateConfiguration();
+            winding_yoke_contact.updateConfiguration();
         }
 
         TickCount t2 = TickCount::now();
         write_water_mechanical_energy.writeToFile(number_of_iterations);
         indicate_free_surface.exec();
         body_states_recording.writeToFile();
+        write_slot_phi.writeToFile(number_of_iterations);
+        write_tooth_phi.writeToFile(number_of_iterations);
+        write_yoke_phi.writeToFile(number_of_iterations);
         TickCount t3 = TickCount::now();
         interval += t3 - t2;
     }
@@ -543,8 +735,15 @@ int main(int ac, char *av[])
 
     TimeInterval tt;
     tt = t4 - t1 - interval;
-    std::cout << "Total wall time for computation: " << tt.seconds()
-              << " seconds." << std::endl;
+    double total_seconds = tt.seconds();
+    int hours = static_cast<int>(total_seconds / 3600);
+    int remaining = static_cast<int>(total_seconds) % 3600;
+    int minutes = remaining / 60;
+    int seconds = remaining % 60;
+    std::cout << "Total wall time for computation: "
+              << hours << " hours "
+              << minutes << " minutes "
+              << seconds << " seconds." << std::endl;
 
     return 0;
 }
