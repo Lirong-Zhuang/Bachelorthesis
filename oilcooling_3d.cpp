@@ -1,13 +1,6 @@
 /**
  * @file 	oil_cooling_3D.cpp
  * @brief 	3D model oil cooling system in a running electric motor.
- * Relaxation               功能正常
- * STL文件导入建模          功能正常
- * 流体动力场               功能正常
- * 转子转动                 功能正常
- * 流体热力场               功能正常
- * 热电耦                   功能正常
- * 坐标轴原点存在问题，cad文件与spinxsys原点存在偏移
  * @author 	Lirong Zhuang
  */
 
@@ -33,7 +26,8 @@ Real resolution_ref = 0.0028; /**< Initial reference particle spacing. */
 Real BW = resolution_ref * 4; /**< Extending width for wall boundary. */
 Vec3d domain_lower_bound(-DL, -DH, -DW);
 Vec3d domain_upper_bound(DL, DH, DW);
-Vecd translation(-0.129, -0.127, -0.12);
+//Vecd translation(-0.129, -0.127, -0.12);
+Vecd translation(-0.11, -0.11, -0.12);
 Real scaling = 0.001;
 //----------------------------------------------------------------------
 //	Below are common parts for the two test geometries.
@@ -44,27 +38,29 @@ BoundingBox system_domain_bounds(domain_lower_bound, domain_upper_bound);
 //----------------------------------------------------------------------
 Real Wnum = 12; /**< Winding Number. */
 Real angle_increment = 2 * Pi / Wnum;
-Real DMO = 0.22;              /**< Diameter of outer motor hausing. */
-Real RMO = 0.5 * DMO;         /**< Radius of outer motor hausing. */
-Real DMN = 0.196;             /**< Diameter of inner motor hausing. */
-Real RMI = 0.5 * DMN;         /**< Radius of inner motor hausing. */
-Real DRO = 0.12;              /**< Diameter of outer rotor. */
-Real LL = 0.006;              /**< Inflow region length. */
-Real LH = RMO - RMI;          /**< Inflows region height. */
-Real WL = 0.03;               /**< Winding length. */
-Real WH = 0.025;              /**< Winding height. */
-Real AG = 0.001;              /**< Air-gap. */
+Real DMO = 0.22;                     /**< Diameter of outer motor hausing. */
+Real RMO = 0.5 * DMO;                /**< Radius of outer motor hausing. */
+Real DMN = 0.196;                    /**< Diameter of inner motor hausing. */
+Real RMI = 0.5 * DMN;                /**< Radius of inner motor hausing. */
+Real DRO = 0.12;                     /**< Diameter of outer rotor. */
+Real LL = 0.006;                     /**< Inflow region length. */
+Real LH = RMO - RMI;                 /**< Inflows region height. */
+Real WL = 0.03;                      /**< Winding length. */
+Real WH = 0.025;                     /**< Winding height. */
+Real WLK = 0.009;                    /**< Winding thickness. */
+Real WCL = WL - 2 * WLK;             /**< Winding core thickness. */
+Real AG = 0.001;                     /**< Air-gap. */
 Real WD = 0.5 * DRO + AG + 0.5 * WH; /**< Distance from center point to the center of a winding. */
-Real inlet_height = DMO - LH; /**< Inflow location height */
-Real rho0_f = 812;            /**< Reference density of fluid. */
-Real gravity_g = 9.81;        /**< Gravity force of fluid. */
+Real inlet_height = DMO - LH;        /**< Inflow location height */
+Real rho0_f = 812;                   /**< Reference density of fluid. */
+Real gravity_g = 9.81;               /**< Gravity force of fluid. */
 // Axis
 Vec3d axis_x(1.0, 0.0, 0.0);
 Vec3d axis_y(0.0, 1.0, 0.0);
 Vec3d axis_z(0.0, 0.0, 1.0);
 // dynamics informations of oil
 Real flow_rate = 110;                                                     /**< Oil flow rate [L / h] */
-Real v_inlet = (flow_rate * 0.001 / 3600) / (Pi * LL * LL);               /**< Inflow vilocity [m / s]. */
+Real v_inlet = (flow_rate * 0.004 / 3600) / (Pi * LL * LL);               /**< Inflow vilocity [m / s]. */
 Real U_f = sqrt(v_inlet * v_inlet + 2 * gravity_g * (inlet_height + LH)); /**< Characteristic velocity. */
 Real c_f = 10.0 * U_f;                                                    /**< Reference sound speed. */
 // dynamics informations of rotor
@@ -77,7 +73,7 @@ Real phi_fluid_initial = 75.0;                                  /**< Temperature
 Real k_oil = 7.62e-8;                                           /**< Diffusion coefficient of oil 2.0e-7. */
 Real k_winding = 1.14e-4;                                       /**< Diffusion coefficient of winding 1.1e-6. */
 Real k_contact = (2 * k_oil * k_winding) / (k_oil + k_winding); /**< Thermal conductivity between winding and oil. */
-Real dq = 1.5;                                                  /**< Heating efficient of internal heat source [°C/s]. */
+Real dq = 0.5;                                                  /**< Heating efficient of internal heat source [°C/s]. */
 //----------------------------------------------------------------------
 //	Geometrie of the inlets and oulets.
 //----------------------------------------------------------------------
@@ -119,22 +115,45 @@ SimTK::UnitVec3 axis5(cos(1 * angle_increment), sin(1 * angle_increment), 0.0);
 //----------------------------------------------------------------------
 //	Locations of observer.
 //----------------------------------------------------------------------
-Real value_z_slots = 0.07; /**< Location of slots at axis z(if all 12 slots are in the same xy-flat. */
+Real value_z_slots = 0.07;   /**< Location of slots at axis z(if all 12 slots are in the same xy-flat. */
 Real value_z_toothes = 0.07; /**< Location of slots at axis z(if all 12 toothes are in the same xy-flat. */
-Real value_z_yokes = 0.07; /**< Location of slots at axis z(if all 12 yokes are in the same xy-flat. */
+Real value_z_yokes = 0.07;   /**< Location of slots at axis z(if all 12 yokes are in the same xy-flat. */
 StdVec<Vec3d> slot_locations = {
-    Vec3d(WD, 0, value_z_slots),
-    Vec3d(WD *cos(angle_increment), WD *sin(angle_increment), value_z_slots),
-    Vec3d(WD *cos(2 * angle_increment), WD *sin(2 * angle_increment), value_z_slots),
-    Vec3d(WD *cos(3 * angle_increment), WD *sin(3 * angle_increment), value_z_slots),
-    Vec3d(WD *cos(4 * angle_increment), WD *sin(4 * angle_increment), value_z_slots),
-    Vec3d(WD *cos(5 * angle_increment), WD *sin(5 * angle_increment), value_z_slots),
-    Vec3d(WD *cos(6 * angle_increment), WD *sin(6 * angle_increment), value_z_slots),
-    Vec3d(WD *cos(7 * angle_increment), WD *sin(7 * angle_increment), value_z_slots),
-    Vec3d(WD *cos(8 * angle_increment), WD *sin(8 * angle_increment), value_z_slots),
-    Vec3d(WD *cos(9 * angle_increment), WD *sin(9 * angle_increment), value_z_slots),
-    Vec3d(WD *cos(10 * angle_increment), WD *sin(10 * angle_increment), value_z_slots),
-    Vec3d(WD *cos(11 * angle_increment), WD *sin(11 * angle_increment), value_z_slots)};
+    Vec3d(WD, 0.5 * WCL, value_z_slots),
+    Vec3d(WD *cos(angle_increment) - 0.5 * WCL * sin(angle_increment),
+          WD *sin(angle_increment) + 0.5 * WCL * cos(angle_increment),
+          value_z_slots),
+    Vec3d(WD *cos(2 * angle_increment) - 0.5 * WCL * sin(2 * angle_increment),
+          WD *sin(2 * angle_increment) + 0.5 * WCL * cos(2 * angle_increment),
+          value_z_slots),
+    Vec3d(WD *cos(3 * angle_increment) - 0.5 * WCL * sin(3 * angle_increment),
+          WD *sin(3 * angle_increment) + 0.5 * WCL * cos(3 * angle_increment),
+          value_z_slots),
+    Vec3d(WD *cos(4 * angle_increment) - 0.5 * WCL * sin(4 * angle_increment),
+          WD *sin(4 * angle_increment) + 0.5 * WCL * cos(4 * angle_increment),
+          value_z_slots),
+    Vec3d(WD *cos(5 * angle_increment) - 0.5 * WCL * sin(5 * angle_increment),
+          WD *sin(5 * angle_increment) + 0.5 * WCL * cos(5 * angle_increment),
+          value_z_slots),
+    Vec3d(WD *cos(6 * angle_increment) - 0.5 * WCL * sin(6 * angle_increment),
+          WD *sin(6 * angle_increment) + 0.5 * WCL * cos(6 * angle_increment),
+          value_z_slots),
+    Vec3d(WD *cos(7 * angle_increment) - 0.5 * WCL * sin(7 * angle_increment),
+          WD *sin(7 * angle_increment) + 0.5 * WCL * cos(7 * angle_increment),
+          value_z_slots),
+    Vec3d(WD *cos(8 * angle_increment) - 0.5 * WCL * sin(8 * angle_increment),
+          WD *sin(8 * angle_increment) + 0.5 * WCL * cos(8 * angle_increment),
+          value_z_slots),
+    Vec3d(WD *cos(9 * angle_increment) - 0.5 * WCL * sin(9 * angle_increment),
+          WD *sin(9 * angle_increment) + 0.5 * WCL * cos(9 * angle_increment),
+          value_z_slots),
+    Vec3d(WD *cos(10 * angle_increment) - 0.5 * WCL * sin(10 * angle_increment),
+          WD *sin(10 * angle_increment) + 0.5 * WCL * cos(10 * angle_increment),
+          value_z_slots),
+    Vec3d(WD *cos(11 * angle_increment) - 0.5 * WCL * sin(11 * angle_increment),
+          WD *sin(11 * angle_increment) + 0.5 * WCL * cos(11 * angle_increment),
+          value_z_slots)
+};
 StdVec<Vec3d> tooth_locations = {
     Vec3d(WD, 0.5 * WL, value_z_toothes),
     Vec3d(WD *cos(angle_increment) - 0.5 * WL * sin(angle_increment),
@@ -169,42 +188,44 @@ StdVec<Vec3d> tooth_locations = {
           value_z_toothes),
     Vec3d(WD *cos(11 * angle_increment) - 0.5 * WL * sin(11 * angle_increment),
           WD *sin(11 * angle_increment) + 0.5 * WL * cos(11 * angle_increment),
-          value_z_toothes)};
+          value_z_toothes)
+};
 StdVec<Vec3d> yoke_locations = {
-    Vec3d(WD + 0.5 * WH, 0.25 * WL, value_z_yokes),
-    Vec3d(WD *cos(angle_increment) + 0.5 * WH * cos(angle_increment) - 0.25 * WL * sin(angle_increment),
-          WD *sin(angle_increment) + 0.5 * WH * sin(angle_increment) + 0.25 * WL * cos(angle_increment),
+    Vec3d(WD + 0.5 * WH, 0.5 * WCL + 0.5 * WLK, value_z_yokes),
+    Vec3d(WD *cos(angle_increment) + 0.5 * WH * cos(angle_increment) - (0.5 * WCL + 0.5 * WLK) * sin(angle_increment),
+          WD *sin(angle_increment) + 0.5 * WH * sin(angle_increment) + (0.5 * WCL + 0.5 * WLK) * cos(angle_increment),
           value_z_yokes),
-    Vec3d(WD *cos(2 * angle_increment) + 0.5 * WH * cos(2 * angle_increment) - 0.25 * WL * sin(2 * angle_increment),
-          WD *sin(2 * angle_increment) + 0.5 * WH * sin(2 * angle_increment) + 0.25 * WL * cos(2 * angle_increment),
+    Vec3d(WD *cos(2 * angle_increment) + 0.5 * WH * cos(2 * angle_increment) - (0.5 * WCL + 0.5 * WLK) * sin(2 * angle_increment),
+          WD *sin(2 * angle_increment) + 0.5 * WH * sin(2 * angle_increment) + (0.5 * WCL + 0.5 * WLK) * cos(2 * angle_increment),
           value_z_yokes),
-    Vec3d(WD *cos(3 * angle_increment) + 0.5 * WH * cos(3 * angle_increment) - 0.25 * WL * sin(3 * angle_increment),
-          WD *sin(3 * angle_increment) + 0.5 * WH * sin(3 * angle_increment) + 0.25 * WL * cos(3 * angle_increment),
+    Vec3d(WD *cos(3 * angle_increment) + 0.5 * WH * cos(3 * angle_increment) - (0.5 * WCL + 0.5 * WLK) * sin(3 * angle_increment),
+          WD *sin(3 * angle_increment) + 0.5 * WH * sin(3 * angle_increment) + (0.5 * WCL + 0.5 * WLK) * cos(3 * angle_increment),
           value_z_yokes),
-    Vec3d(WD *cos(4 * angle_increment) + 0.5 * WH * cos(4 * angle_increment) - 0.25 * WL * sin(4 * angle_increment),
-          WD *sin(4 * angle_increment) + 0.5 * WH * sin(4 * angle_increment) + 0.25 * WL * cos(4 * angle_increment),
+    Vec3d(WD *cos(4 * angle_increment) + 0.5 * WH * cos(4 * angle_increment) - (0.5 * WCL + 0.5 * WLK) * sin(4 * angle_increment),
+          WD *sin(4 * angle_increment) + 0.5 * WH * sin(4 * angle_increment) + (0.5 * WCL + 0.5 * WLK) * cos(4 * angle_increment),
           value_z_yokes),
-    Vec3d(WD *cos(5 * angle_increment) + 0.5 * WH * cos(5 * angle_increment) - 0.25 * WL * sin(5 * angle_increment),
-          WD *sin(5 * angle_increment) + 0.5 * WH * sin(5 * angle_increment) + 0.25 * WL * cos(5 * angle_increment),
+    Vec3d(WD *cos(5 * angle_increment) + 0.5 * WH * cos(5 * angle_increment) - (0.5 * WCL + 0.5 * WLK) * sin(5 * angle_increment),
+          WD *sin(5 * angle_increment) + 0.5 * WH * sin(5 * angle_increment) + (0.5 * WCL + 0.5 * WLK) * cos(5 * angle_increment),
           value_z_yokes),
-    Vec3d(WD *cos(6 * angle_increment) + 0.5 * WH * cos(6 * angle_increment) - 0.25 * WL * sin(6 * angle_increment),
-          WD *sin(6 * angle_increment) + 0.5 * WH * sin(6 * angle_increment) + 0.25 * WL * cos(6 * angle_increment),
+    Vec3d(WD *cos(6 * angle_increment) + 0.5 * WH * cos(6 * angle_increment) - (0.5 * WCL + 0.5 * WLK) * sin(6 * angle_increment),
+          WD *sin(6 * angle_increment) + 0.5 * WH * sin(6 * angle_increment) + (0.5 * WCL + 0.5 * WLK) * cos(6 * angle_increment),
           value_z_yokes),
-    Vec3d(WD *cos(7 * angle_increment) + 0.5 * WH * cos(7 * angle_increment) - 0.25 * WL * sin(7 * angle_increment),
-          WD *sin(7 * angle_increment) + 0.5 * WH * sin(7 * angle_increment) + 0.25 * WL * cos(7 * angle_increment),
+    Vec3d(WD *cos(7 * angle_increment) + 0.5 * WH * cos(7 * angle_increment) - (0.5 * WCL + 0.5 * WLK) * sin(7 * angle_increment),
+          WD *sin(7 * angle_increment) + 0.5 * WH * sin(7 * angle_increment) + (0.5 * WCL + 0.5 * WLK) * cos(7 * angle_increment),
           value_z_yokes),
-    Vec3d(WD *cos(8 * angle_increment) + 0.5 * WH * cos(8 * angle_increment) - 0.25 * WL * sin(8 * angle_increment),
-          WD *sin(8 * angle_increment) + 0.5 * WH * sin(8 * angle_increment) + 0.25 * WL * cos(8 * angle_increment),
+    Vec3d(WD *cos(8 * angle_increment) + 0.5 * WH * cos(8 * angle_increment) - (0.5 * WCL + 0.5 * WLK) * sin(8 * angle_increment),
+          WD *sin(8 * angle_increment) + 0.5 * WH * sin(8 * angle_increment) + (0.5 * WCL + 0.5 * WLK) * cos(8 * angle_increment),
           value_z_yokes),
-    Vec3d(WD *cos(9 * angle_increment) + 0.5 * WH * cos(9 * angle_increment) - 0.25 * WL * sin(9 * angle_increment),
-          WD *sin(9 * angle_increment) + 0.5 * WH * sin(9 * angle_increment) + 0.25 * WL * cos(9 * angle_increment),
+    Vec3d(WD *cos(9 * angle_increment) + 0.5 * WH * cos(9 * angle_increment) - (0.5 * WCL + 0.5 * WLK) * sin(9 * angle_increment),
+          WD *sin(9 * angle_increment) + 0.5 * WH * sin(9 * angle_increment) + (0.5 * WCL + 0.5 * WLK) * cos(9 * angle_increment),
           value_z_yokes),
-    Vec3d(WD *cos(10 * angle_increment) + 0.5 * WH * cos(10 * angle_increment) - 0.25 * WL * sin(10 * angle_increment),
-          WD *sin(10 * angle_increment) + 0.5 * WH * sin(10 * angle_increment) + 0.25 * WL * cos(10 * angle_increment),
+    Vec3d(WD *cos(10 * angle_increment) + 0.5 * WH * cos(10 * angle_increment) - (0.5 * WCL + 0.5 * WLK) * sin(10 * angle_increment),
+          WD *sin(10 * angle_increment) + 0.5 * WH * sin(10 * angle_increment) + (0.5 * WCL + 0.5 * WLK) * cos(10 * angle_increment),
           value_z_yokes),
-    Vec3d(WD *cos(11 * angle_increment) + 0.5 * WH * cos(11 * angle_increment) - 0.25 * WL * sin(11 * angle_increment),
-          WD *sin(11 * angle_increment) + 0.5 * WH * sin(11 * angle_increment) + 0.25 * WL * cos(11 * angle_increment),
-          value_z_yokes)};
+    Vec3d(WD *cos(11 * angle_increment) + 0.5 * WH * cos(11 * angle_increment) - (0.5 * WCL + 0.5 * WLK) * sin(11 * angle_increment),
+          WD *sin(11 * angle_increment) + 0.5 * WH * sin(11 * angle_increment) + (0.5 * WCL + 0.5 * WLK) * cos(11 * angle_increment),
+          value_z_yokes)
+};
 //----------------------------------------------------------------------
 //	Case-dependent Hausing
 //----------------------------------------------------------------------
@@ -246,7 +267,7 @@ class CoverFromMesh : public ComplexShape
   public:
     explicit CoverFromMesh(const std::string &shape_name) : ComplexShape(shape_name)
     {
-        add<ExtrudeShape<TriangleMeshShapeSTL>>(3 * resolution_ref, cover_CAD, translation, scaling);
+        add<ExtrudeShape<TriangleMeshShapeSTL>>(2 * resolution_ref, cover_CAD, translation, scaling);
     }
 };
 //----------------------------------------------------------------------
@@ -567,7 +588,7 @@ int main(int ac, char *av[])
     body_states_recording.addToWrite<int>(oil, "Indicator");
     body_states_recording.addToWrite<Real>(oil, "Phi");
     body_states_recording.addToWrite<Real>(winding, "Phi");
-    RegressionTestDynamicTimeWarping<ReducedQuantityRecording<TotalMechanicalEnergy>> write_water_mechanical_energy(oil, gravity);
+    // RegressionTestDynamicTimeWarping<ReducedQuantityRecording<TotalMechanicalEnergy>> write_water_mechanical_energy(oil, gravity);
     RegressionTestEnsembleAverage<ObservedQuantityRecording<Real>> write_slot_phi("Phi", winding_slot_contact);
     RegressionTestEnsembleAverage<ObservedQuantityRecording<Real>> write_tooth_phi("Phi", winding_tooth_contact);
     RegressionTestEnsembleAverage<ObservedQuantityRecording<Real>> write_yoke_phi("Phi", winding_yoke_contact);
@@ -613,7 +634,7 @@ int main(int ac, char *av[])
     //----------------------------------------------------------------------
     size_t number_of_iterations = sph_system.RestartStep();
     int screen_output_interval = 100;
-    Real end_time = 5.0;
+    Real end_time = 30.0;
     Real output_interval = 0.05;
     Real dt = 0.0; /**< Default acoustic time step sizes. */
     /** statistics for computing CPU time. */
@@ -623,7 +644,7 @@ int main(int ac, char *av[])
     //	First output before the main loop.
     //----------------------------------------------------------------------
     body_states_recording.writeToFile();
-    write_water_mechanical_energy.writeToFile(number_of_iterations);
+    // write_water_mechanical_energy.writeToFile(number_of_iterations);
     write_slot_phi.writeToFile(number_of_iterations);
     write_tooth_phi.writeToFile(number_of_iterations);
     write_yoke_phi.writeToFile(number_of_iterations);
@@ -722,7 +743,7 @@ int main(int ac, char *av[])
         }
 
         TickCount t2 = TickCount::now();
-        write_water_mechanical_energy.writeToFile(number_of_iterations);
+        // write_water_mechanical_energy.writeToFile(number_of_iterations);
         indicate_free_surface.exec();
         body_states_recording.writeToFile();
         write_slot_phi.writeToFile(number_of_iterations);
