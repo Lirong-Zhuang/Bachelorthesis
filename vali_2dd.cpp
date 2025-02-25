@@ -1,5 +1,6 @@
 /**
- * @brief 	实际运行 2d dambreak 用于 validation. 以BAL VD1 中 2d dam break 参数为基准
+ * @file 	oilcooling_filling.cpp
+ * @brief 	实际运行 2d dambreak 用于 validation.
  * @author 	Lirong Zhuang
  */
 #include "sphinxsys.h" //SPHinXsys Library.
@@ -7,10 +8,10 @@ using namespace SPH;   // Namespace cite here.
 //----------------------------------------------------------------------
 //	Basic geometry parameters and numerical setup.
 //----------------------------------------------------------------------
-Real LH = 0.6;                       /**< Water column height. */
-Real DL = 5.366 * LH;                /**< Water tank length. */
-Real DH = 5.366 * LH;                /**< Water tank height. */
-Real LL = 2 * LH;                    /**< Water column length. */
+Real LH = 0.3;                       /**< Water column height. */
+Real DL = 1.610;                /**< Water tank length. */
+Real DH = 1.610;                /**< Water tank height. */
+Real LL = 0.6;                    /**< Water column length. */
 Real particle_spacing_ref = LH / 30; /**< Initial reference particle spacing. */
 Real BW = particle_spacing_ref * 4;  /**< Thickness of tank wall. */
 //----------------------------------------------------------------------
@@ -24,7 +25,7 @@ Real c_f = 10.0 * U_ref;                 /**< Reference sound speed. */
 //	Geometric shapes used in this case.
 //----------------------------------------------------------------------
 Vec2d water_block_halfsize = Vec2d(0.5 * LL, 0.5 * LH); // local center at origin
-Vec2d water_block_translation = water_block_halfsize;   // translation to global coordinates
+Vec2d water_block_translation = Vec2d(DL - 0.5 * LL, 0.5 * LH); // translation to global coordinates
 Vec2d outer_wall_halfsize = Vec2d(0.5 * DL + BW, 0.5 * DH + BW);
 Vec2d outer_wall_translation = Vec2d(-BW, -BW) + outer_wall_halfsize;
 Vec2d inner_wall_halfsize = Vec2d(0.5 * DL, 0.5 * DH);
@@ -42,6 +43,13 @@ class WallBoundary : public ComplexShape
         subtract<TransformShape<GeometricShapeBox>>(Transform(inner_wall_translation), inner_wall_halfsize);
     }
 };
+
+StdVec<Vecd> p_locations =
+    {
+        Vecd(0.0, 0.003),
+        Vecd(0.0, 0.03),
+        Vecd(0.0, 0.08)
+    };
 //----------------------------------------------------------------------
 //	wave gauge
 //----------------------------------------------------------------------
@@ -49,11 +57,11 @@ Real h = 1.3 * particle_spacing_ref;
 MultiPolygon createH1Shape()
 {
     std::vector<Vecd> H1_shape;
-    H1_shape.push_back(Vecd(DL - 300.0 / 1000.0 - h, 0.0));
-    H1_shape.push_back(Vecd(DL - 300.0 / 1000.0 - h, DH));
-    H1_shape.push_back(Vecd(DL - 300.0 / 1000.0 + h, DH));
-    H1_shape.push_back(Vecd(DL - 300.0 / 1000.0 + h, 0.0));
-    H1_shape.push_back(Vecd(DL - 300.0 / 1000.0 - h, 0.0));
+    H1_shape.push_back(Vecd(DL - 0.3 - h, 0.0));
+    H1_shape.push_back(Vecd(DL - 0.3 - h, DH));
+    H1_shape.push_back(Vecd(DL - 0.3 + h, DH));
+    H1_shape.push_back(Vecd(DL - 0.3 + h, 0.0));
+    H1_shape.push_back(Vecd(DL - 0.3 - h, 0.0));
 
     MultiPolygon multi_polygon_H1;
     multi_polygon_H1.addAPolygon(H1_shape, ShapeBooleanOps::add);
@@ -62,11 +70,11 @@ MultiPolygon createH1Shape()
 MultiPolygon createH2Shape()
 {
     std::vector<Vecd> H2_shape;
-    H2_shape.push_back(Vecd(DL - 1114.0 / 1000.0 - h, 0.0));
-    H2_shape.push_back(Vecd(DL - 1114.0 / 1000.0 - h, DH));
-    H2_shape.push_back(Vecd(DL - 1114.0 / 1000.0 + h, DH));
-    H2_shape.push_back(Vecd(DL - 1114.0 / 1000.0 + h, 0.0));
-    H2_shape.push_back(Vecd(DL - 1114.0 / 1000.0 - h, 0.0));
+    H2_shape.push_back(Vecd(DL - 1.114 - h, 0.0));
+    H2_shape.push_back(Vecd(DL - 1.114 - h, DH));
+    H2_shape.push_back(Vecd(DL - 1.114 + h, DH));
+    H2_shape.push_back(Vecd(DL - 1.114 + h, 0.0));
+    H2_shape.push_back(Vecd(DL - 1.114 - h, 0.0));
 
     MultiPolygon multi_polygon_H2;
     multi_polygon_H2.addAPolygon(H2_shape, ShapeBooleanOps::add);
@@ -75,11 +83,11 @@ MultiPolygon createH2Shape()
 MultiPolygon createH3Shape()
 {
     std::vector<Vecd> H3_shape;
-    H3_shape.push_back(Vecd(DL - 1362.0 / 1000.0 - h, 0.0));
-    H3_shape.push_back(Vecd(DL - 1362.0 / 1000.0 - h, DH));
-    H3_shape.push_back(Vecd(DL - 1362.0 / 1000.0 + h, DH));
-    H3_shape.push_back(Vecd(DL - 1362.0 / 1000.0 + h, 0.0));
-    H3_shape.push_back(Vecd(DL - 1362.0 / 1000.0 - h, 0.0));
+    H3_shape.push_back(Vecd(DL - 1.362 - h, 0.0));
+    H3_shape.push_back(Vecd(DL - 1.362 - h, DH));
+    H3_shape.push_back(Vecd(DL - 1.362 + h, DH));
+    H3_shape.push_back(Vecd(DL - 1.362 + h, 0.0));
+    H3_shape.push_back(Vecd(DL - 1.362 - h, 0.0));
 
     MultiPolygon multi_polygon_H3;
     multi_polygon_H3.addAPolygon(H3_shape, ShapeBooleanOps::add);
@@ -108,9 +116,8 @@ int main(int ac, char *av[])
     wall_boundary.defineMaterial<Solid>();
     wall_boundary.generateParticles<BaseParticles, Lattice>();
 
-    ObserverBody P0(sph_system, "ObserverP0");
-    StdVec<Vecd> P0_location = {Vecd(DL, 0.2 * LH)};
-    P0.generateParticles<ObserverParticles>(P0_location);
+    ObserverBody p_observer(sph_system, "ObserverPressure");
+    p_observer.generateParticles<ObserverParticles>(p_locations);
     //----------------------------------------------------------------------
     //	Define body relation map.
     //	The contact map gives the topological connections between the bodies.
@@ -119,7 +126,7 @@ int main(int ac, char *av[])
     //----------------------------------------------------------------------
     InnerRelation water_block_inner(water_block);
     ContactRelation water_wall_contact(water_block, {&wall_boundary});
-    ContactRelation fluid_P_contact(P0, {&water_block});
+    ContactRelation fluid_P_contact(p_observer, {&water_block});
     //----------------------------------------------------------------------
     // Combined relations built from basic relations
     // which is only used for update configuration.
@@ -184,11 +191,11 @@ int main(int ac, char *av[])
     //	Setup for time-stepping control
     //----------------------------------------------------------------------
     size_t number_of_iterations = sph_system.RestartStep();
-    int screen_output_interval = 100;
-    int observation_sample_interval = screen_output_interval * 2;
+    int screen_output_interval = 1;
+    int observation_sample_interval = 1;
     int restart_output_interval = screen_output_interval * 10;
-    Real end_time = 30.0;
-    Real frame = 12;
+    Real end_time = 3.0;
+    Real frame = 100;
     Real output_interval = 1 / frame;
     //----------------------------------------------------------------------
     //	Statistics for CPU time
