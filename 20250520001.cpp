@@ -10,25 +10,25 @@ using namespace SPH;
 //----------------------------------------------------------------------
 //	Global geometry, material parameters and numerical setup.
 //----------------------------------------------------------------------
-Real DMO = 0.2;                          /**< Outer diameter of motor hausing. */
-Real DM = 0.196;                         /**< Diameter of motor hausing. */
-Real DRO = 0.12;                         /**< Diameter of outer rotor. */
-Real DRI = 0.04;                         /**< Diameter of inner rotor. */
-Real WL = 0.03;                          /**< Winding length. */
-Real WH = 0.025;                         /**< Winding height. */
-Real AG = 0.001;                         /**< Air-gap. */
-Real LL = 0.004;                         /**< Inflow region length. */
-Real LH = 0.012;                         /**< Inflows region height. */
-Real DO = 0.02;                          /**< Outflow diameter. */
+Real DMO = 0.2;  /**< Outer diameter of motor hausing. */
+Real DM = 0.196; /**< Diameter of motor hausing. */
+Real DRO = 0.12; /**< Diameter of outer rotor. */
+Real DRI = 0.04; /**< Diameter of inner rotor. */
+Real WL = 0.03;  /**< Winding length. */
+Real WH = 0.025; /**< Winding height. */
+Real AG = 0.001; /**< Air-gap. */
+Real LL = 0.004; /**< Inflow region length. */
+Real LH = 0.012; /**< Inflows region height. */
+Real DO = 0.02;  /**< Outflow diameter. */
 
-Real RM = 0.5 * DM;                      /**< Radius of motor hausing. */
-Real RR = 0.5 * DRI;                     /**< Radius of rotor. */
-Real Wnum = 12;                          /**< Winding Number. */
+Real RM = 0.5 * DM;  /**< Radius of motor hausing. */
+Real RR = 0.5 * DRI; /**< Radius of rotor. */
+Real Wnum = 12;      /**< Winding Number. */
 Real angle_increment = 2 * Pi / Wnum;
 Real WD = 0.5 * DRO + AG + 0.5 * WH;     /**< Distance from center point to the center of a winding. */
 Real ZW = 0.5 * DRO + AG;                /**< Distance from center point to the site of a winding. */
 int resolution_circle = 60;              /**<Approximate the circle as the number of sides of the polygon. */
-Real resolution_ref = 0.0015;            /**< Initial reference particle spacing. */
+Real resolution_ref = 0.001;            /**< Initial reference particle spacing. */
 Real BW = 0.5 * (DMO - DM);              /**< Extending width for wall boundary. */
 Real OH = LH;                            /**< Outflows region height. */
 Real Lnum = 5;                           /**< Inflows number. */
@@ -110,7 +110,7 @@ Real rho0_f = 945;     /**< Reference density of fluid. */
 Real gravity_g = 9.81; /**< Gravity force of fluid. */
 std::string temperature_species_name = "Phi";
 // dynamics informations of oil
-Real flow_rate = 30;                                                     /**< Oil flow rate [L / h] */
+Real flow_rate = 30.0;                                                      /**< Oil flow rate [L / h] */
 Real v_inlet = (flow_rate * 0.001 / 3600) / (Pi * LL * LL);               /**< Inflow vilocity [m / s]. */
 Real U_f = sqrt(v_inlet * v_inlet + 2 * gravity_g * (inlet_height + LH)); /**< Characteristic velocity. */
 Real c_f = 10.0 * U_f;                                                    /**< Reference sound speed. */
@@ -118,13 +118,13 @@ Real c_f = 10.0 * U_f;                                                    /**< R
 Real rotor_rotation_velocity = 150;                    /**<Angular velocity rpm. */
 Real Omega = -(rotor_rotation_velocity * 2 * Pi / 60); /**<Angle of rotor. */
 // thermal parameters
-Real mu_f = 0.00874;                                            /**< Dynamics viscosity [Pa * s]. */
+Real mu_f = 0.05;                                            /**< Dynamics viscosity [Pa * s]. */
 Real phi_winding = 110.0;                                       /**< Temperature of winding at begin. */
 Real phi_fluid_initial = 75.0;                                  /**< Temperature of oil at begin. */
 Real k_oil = 7.62e-8;                                           /**< Diffusion coefficient of oil 2.0e-7. */
 Real k_winding = 1.14e-4;                                       /**< Diffusion coefficient of winding 1.1e-6. */
 Real k_contact = (2 * k_oil * k_winding) / (k_oil + k_winding); /**< Thermal conductivity between winding and oil. */
-Real dq = 0.75;                                                 /**< Heating efficient of internal heat source [°C/s]. */
+Real dq = 1.75;                                                 /**< Heating efficient of internal heat source [°C/s]. */
 //----------------------------------------------------------------------
 //	Geometrie of the othor 4 inlets.
 //----------------------------------------------------------------------
@@ -224,7 +224,7 @@ class ThermoWindingInitialCondition : public LocalDynamics
   public:
     explicit ThermoWindingInitialCondition(SPHBody &sph_body)
         : LocalDynamics(sph_body),
-          phi_(particles_->registerStateVariable<Real>(temperature_species_name)) {};
+          phi_(particles_->registerStateVariable<Real>(temperature_species_name)){};
 
     void update(size_t index_i, Real dt)
     {
@@ -242,7 +242,7 @@ class ThermoWindingHeatSource : public LocalDynamics
   public:
     explicit ThermoWindingHeatSource(SPHBody &sph_body)
         : LocalDynamics(sph_body),
-          phi_(particles_->registerStateVariable<Real>(temperature_species_name)) {};
+          phi_(particles_->registerStateVariable<Real>(temperature_species_name)){};
 
     void update(size_t index_i, Real dt)
     {
@@ -260,7 +260,7 @@ class ThermofluidBodyInitialCondition : public LocalDynamics
   public:
     explicit ThermofluidBodyInitialCondition(SPHBody &sph_body)
         : LocalDynamics(sph_body),
-          phi_(particles_->registerStateVariable<Real>(temperature_species_name)) {};
+          phi_(particles_->registerStateVariable<Real>(temperature_species_name)){};
 
     void update(size_t index_i, Real dt)
     {
@@ -400,6 +400,8 @@ int main(int ac, char *av[])
     InnerRelation winding_inner(winding);
     ContactRelation oil_body_contact(oil_body, {&wall, &rotor, &winding});
     ContactRelation oil_contact(oil_body, {&winding});
+    ContactRelation oil_wall_contact(oil_body, {&wall});
+    ContactRelation oil_rotor_contact(oil_body, {&rotor});
     ContactRelation winding_contact(winding, {&oil_body});
     ContactRelation winding_slot_contact(slot_observer, {&winding});
     ContactRelation winding_tooth_contact(tooth_observer, {&winding});
@@ -606,8 +608,8 @@ int main(int ac, char *av[])
     std::cout << "Total wall time for computation: " << tt.seconds()
               << " seconds." << std::endl;
 
-    //write_slot_phi.generateDataBase(0.005, 0.005);
-    //write_slot_phi.testResult();
+    // write_slot_phi.generateDataBase(0.005, 0.005);
+    // write_slot_phi.testResult();
 
     return 0;
 }
