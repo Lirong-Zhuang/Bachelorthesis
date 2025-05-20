@@ -3,7 +3,7 @@
  * @brief 	2D model oil cooling system in a running electric motor.
  * Relaxation               未添加
  * 流体动力场               功能正常
- * 粘滞性                   未添加
+ * 粘滞性                   添加
  * 转子转动                 未添加
  * 流体热力场               未添加
  * 热电偶                   未添加
@@ -227,6 +227,7 @@ int main(int ac, char *av[])
     SimpleDynamics<GravityForce<Gravity>> constant_gravity(oil_body, gravity);
     ReduceDynamics<fluid_dynamics::AdvectionTimeStep> get_fluid_advection_time_step_size(oil_body, U_f);
     ReduceDynamics<fluid_dynamics::AcousticTimeStep> get_fluid_time_step_size(oil_body);
+    InteractionWithUpdate<fluid_dynamics::ViscousForceWithWall> viscous_force(oil_body_inner, oil_body_contact);
 
     AlignedBoxByParticle emitter(oil_body, AlignedBox(xAxis, inlet_transform, inlet_halfsize));
     SimpleDynamics<InletInflowCondition> inflow_condition(emitter);
@@ -289,6 +290,7 @@ int main(int ac, char *av[])
         {
             Real Dt = get_fluid_advection_time_step_size.exec();
             update_density_by_summation.exec();
+            viscous_force.exec();
 
             /** Dynamics including pressure relaxation. */
             Real relaxation_time = 0.0;
