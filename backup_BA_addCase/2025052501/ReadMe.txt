@@ -1,0 +1,5 @@
+此文件夹包含两个待上传至git hub的case 备份，后缀为_wpr的是没有particle relaxation的版本。
+
+两个case都有精度为0.005的regression database。
+
+能通过CI build test但是CI run tests不通过，报错为relaxation无法构建，怀疑是CMakeList问题。
